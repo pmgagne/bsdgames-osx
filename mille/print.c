@@ -107,7 +107,7 @@ show_card(int y, int x, CARD c, CARD *lc)
 static char	Score_fmt[] = "%4d";
 
 void
-prscore(bool for_real)
+prscore(bool for_real __unused)
 {
 	PLAY	*pp;
 	int	x;

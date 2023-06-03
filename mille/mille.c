@@ -71,8 +71,8 @@ main(int ac, char *av[])
 	Play = PLAYER;
 	initscr();
 
-	if (pledge("stdio rpath wpath cpath tty", NULL) == -1)
-		err(1, "pledge");
+//	if (pledge("stdio rpath wpath cpath tty", NULL) == -1)
+//		err(1, "pledge");
 
 	if ((LINES < 24) || (COLS < 80)) {
 		endwin();
@@ -128,7 +128,7 @@ main(int ac, char *av[])
  * quit.
  */
 void
-rub(int dummy)
+rub(int dummy __unused)
 {
 	(void)signal(SIGINT, SIG_IGN);
 	if (getyn(REALLYPROMPT))

@@ -182,7 +182,7 @@ redoit:
 				diff = End - pp->mileage;
 				/* avoid getting too close */
 				if (Topcard > Deck && cango && diff <= 100
-				    && diff / Value[card] > count[card]
+				    && diff / Value[card] > (unsigned int)count[card]
 				    && (card == C_25 || diff % 50 == 0)) {
 					if (card == C_50 && diff - 50 == 25
 					    && count[C_25] > 0)
