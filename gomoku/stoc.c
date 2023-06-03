@@ -1,4 +1,4 @@
-/*	$NetBSD: stoc.c,v 1.8 2004/11/05 21:30:32 dsl Exp $	*/
+/*	$NetBSD: stoc.c,v 1.12 2009/08/12 06:19:17 dholland Exp $	*/
 
 /*
  * Copyright (c) 1994
@@ -30,16 +30,9 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)stoc.c	8.1 (Berkeley) 7/24/94
  */
-
-#include <sys/cdefs.h>
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)stoc.c	8.1 (Berkeley) 7/24/94";
-#else
-__RCSID("$NetBSD: stoc.c,v 1.8 2004/11/05 21:30:32 dsl Exp $");
-#endif
-#endif /* not lint */
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -59,12 +52,14 @@ static	const struct	mvstr	mv[] = {
 	{ -1,		0 }
 };
 
+static int lton(int);
+
+
 /*
  * Turn the spot number form of a move into the character form.
  */
 const char *
-g_stoc(s)
-	int s;
+cvrt_stoc(int s)
 {
 	static char buf[32];
 	int i;
@@ -72,7 +67,7 @@ g_stoc(s)
 	for (i = 0; mv[i].m_code >= 0; i++)
 		if (s == mv[i].m_code)
 			return(mv[i].m_text);
-	sprintf(buf, "%c%d", letters[s % BSZ1], s / BSZ1);
+	snprintf(buf, sizeof(buf), "%c%d", letters[s % BSZ1], s / BSZ1);
 	return(buf);
 }
 
@@ -80,8 +75,7 @@ g_stoc(s)
  * Turn the character form of a move into the spot number form.
  */
 int
-g_ctos(mp)
-	const char *mp;
+cvrt_ctos(const char *mp)
 {
 	int i;
 
@@ -93,15 +87,14 @@ g_ctos(mp)
 	i = atoi(&mp[1]);
 	if (i < 1 || i > 19)
 		return(ILLEGAL);
-	return(PT(g_lton(mp[0]), i));
+	return(PT(lton((unsigned char)mp[0]), i));
 }
 
 /*
  * Turn a letter into a number.
  */
-int
-g_lton(c)
-	int c;
+static int
+lton(int c)
 {
 	int i;
 

@@ -1,4 +1,4 @@
-/*	$NetBSD: makemove.c,v 1.7 2003/08/07 09:37:17 agc Exp $	*/
+/*	$NetBSD: makemove.c,v 1.11 2009/08/12 06:19:17 dholland Exp $	*/
 
 /*
  * Copyright (c) 1994
@@ -30,16 +30,9 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)makemove.c	8.2 (Berkeley) 5/3/95
  */
-
-#include <sys/cdefs.h>
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)makemove.c	8.2 (Berkeley) 5/3/95";
-#else
-__RCSID("$NetBSD: makemove.c,v 1.7 2003/08/07 09:37:17 agc Exp $");
-#endif
-#endif /* not lint */
 
 #include "gomoku.h"
 
@@ -48,7 +41,9 @@ const int     dd[4] = {
 	MRIGHT, MRIGHT+MDOWN, MDOWN, MDOWN+MLEFT
 };
 
-const int	weight[5] = { 0, 1, 7, 22, 100 };
+static const int weight[5] = { 0, 1, 7, 22, 100 };
+
+static void update_overlap(struct spotstr *);
 
 /*
  * Return values:
@@ -59,8 +54,7 @@ const int	weight[5] = { 0, 1, 7, 22, 100 };
  *	TIE	The game is a tie.
  */
 int
-makemove(us, mv)
-	int us, mv;
+makemove(int us, int mv)
 {
 	struct spotstr *sp, *fsp;
 	union comboval *cp;
@@ -95,7 +89,7 @@ makemove(us, mv)
 	    for (f = 5; --f >= 0; fsp -= d) {		/* for each frame */
 		if (fsp->s_occ == BORDER)
 		    goto nextr;
-		if (fsp->s_flg & bmask)
+		if (fsp->s_flags & bmask)
 		    continue;
 
 		/* remove this frame from the sorted list of frames */
@@ -130,7 +124,7 @@ makemove(us, mv)
 			sp->s_wval -= val;
 		    else {
 			/* this frame is now blocked, adjust values */
-			fsp->s_flg |= bmask;
+			fsp->s_flags |= bmask;
 			fsp->s_fval[BLACK][r].s = MAXCOMBO;
 			fsp->s_fval[WHITE][r].s = MAXCOMBO;
 			while (--i >= 0) {
@@ -216,15 +210,14 @@ makemove(us, mv)
 /*
  * fix up the overlap array due to updating spot osp.
  */
-void
-update_overlap(osp)
-	struct spotstr *osp;
+static void
+update_overlap(struct spotstr *osp)
 {
 	struct spotstr *sp, *sp1, *sp2;
 	int i, f, r, r1, d, d1, n;
 	int a, b, bmask, bmask1;
 	struct spotstr *esp;
-	char *str;
+	u_char *str;
 
 	esp = NULL;
 	for (r = 4; --r >= 0; ) {			/* for each direction */
@@ -234,7 +227,7 @@ update_overlap(osp)
 	    for (f = 0; f < 6; f++, sp1 -= d) {		/* for each frame */
 		if (sp1->s_occ == BORDER)
 		    break;
-		if (sp1->s_flg & bmask)
+		if (sp1->s_flags & bmask)
 		    continue;
 		/*
 		 * Update all other frames that intersect the current one
@@ -243,12 +236,12 @@ update_overlap(osp)
 		 * do the rows 0 <= r1 <= r. The r1 == r case is special
 		 * since the two frames can overlap at more than one point.
 		 */
-		str = (char *)&overlap[(a = sp1->s_frame[r] - frames) * FAREA];
+		str = &overlap[(a = sp1->s_frame[r] - frames) * FAREA];
 		sp2 = sp1 - d;
 		for (i = f + 1; i < 6; i++, sp2 -= d) {
 		    if (sp2->s_occ == BORDER)
 			break;
-		    if (sp2->s_flg & bmask)
+		    if (sp2->s_flags & bmask)
 			continue;
 		    /*
 		     * count the number of empty spots to see if there is
@@ -295,7 +288,7 @@ update_overlap(osp)
 		    for (i = 6; --i >= 0; sp -= d1) {	/* for each spot */
 			if (sp->s_occ == BORDER)
 			    break;
-			if (sp->s_flg & bmask1)
+			if (sp->s_flags & bmask1)
 			    continue;
 			b = sp->s_frame[r1] - frames;
 			str[b] = 0;

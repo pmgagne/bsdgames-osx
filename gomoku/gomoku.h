@@ -1,4 +1,4 @@
-/*	$NetBSD: gomoku.h,v 1.10 2004/01/27 20:30:29 jsm Exp $	*/
+/*	$NetBSD: gomoku.h,v 1.20 2014/03/22 18:58:57 dholland Exp $	*/
 
 /*
  * Copyright (c) 1994
@@ -35,16 +35,23 @@
  */
 
 #include <sys/types.h>
-#include <sys/param.h>
+#include <machine/endian.h>
 #include <stdio.h>
 
 /* board dimensions */
 #define BSZ	19
 #define BSZ1	(BSZ+1)
 #define BSZ2	(BSZ+2)
+#define BSZ3	(BSZ+3)
+#define BSZ4	(BSZ+4)
 #define BAREA	(BSZ2*BSZ1+1)
 
-/* frame dimentions (based on 5 in a row) */
+#define TRANSCRIPT_COL	46	/* necessarily == 2*BSZ4 */
+
+/* interactive curses stuff */
+#define BGOTO(y,x)	move(BSZ - (y), 2 * (x) + 3)
+
+/* frame dimensions (based on 5 in a row) */
 #define FSZ1	BSZ
 #define FSZ2	(BSZ-4)
 #define FAREA	(FSZ1*FSZ2 + FSZ2*FSZ2 + FSZ1*FSZ2 + FSZ2*FSZ2)
@@ -175,7 +182,7 @@ struct combostr {
 	u_short		c_vertex;	/* C:intersection or F:frame head */
 	u_char		c_nframes;	/* number of frames in the combo */
 	u_char		c_dir;		/* C:loop frame or F:frame direction */
-	u_char		c_flg;		/* C:combo flags */
+	u_char		c_flags;	/* C:combo flags */
 	u_char		c_frameindex;	/* C:intersection frame index */
 	u_char		c_framecnt[2];	/* number of frames left to attach */
 	u_char		c_emask[2];	/* C:bit mask of completion spots for
@@ -183,7 +190,7 @@ struct combostr {
 	u_char		c_voff[2];	/* C:vertex offset within frame */
 };
 
-/* flag values for c_flg */
+/* flag values for c_flags */
 #define C_OPEN_0	0x01		/* link[0] is an open ended frame */
 #define C_OPEN_1	0x02		/* link[1] is an open ended frame */
 #define C_LOOP		0x04		/* link[1] intersects previous frame */
@@ -211,7 +218,7 @@ struct	elist {
 struct	spotstr {
 	short		s_occ;		/* color of occupant */
 	short		s_wval;		/* weighted value */
-	int		s_flg;		/* flags for graph walks */
+	int		s_flags;	/* flags for graph walks */
 	struct combostr	*s_frame[4];	/* level 1 combo for frame[dir] */
 	union comboval	s_fval[2][4];	/* combo value for [color][frame] */
 	union comboval	s_combo[2];	/* minimum combo value for BLK & WHT */
@@ -222,7 +229,7 @@ struct	spotstr {
 	int		dummy[2];	/* XXX */
 };
 
-/* flag values for s_flg */
+/* flag values for s_flags */
 #define CFLAG		0x000001	/* frame is part of a combo */
 #define CFLAGALL	0x00000F	/* all frame directions marked */
 #define IFLAG		0x000010	/* legal intersection point */
@@ -237,7 +244,7 @@ struct	spotstr {
 /*
  * This structure is used to store overlap information between frames.
  */
-struct	ovlp_info {
+struct overlap_info {
 	int		o_intersect;	/* intersection spot */
 	struct combostr	*o_fcombo;	/* the connecting combo */
 	u_char		o_link;		/* which link to update (0 or 1) */
@@ -246,7 +253,6 @@ struct	ovlp_info {
 };
 
 extern	const char	*letters;
-extern	char	fmtbuf[];
 extern	const char	pdir[];
 
 extern	const int     dd[4];
@@ -259,11 +265,15 @@ extern	int	movelog[BSZ * BSZ];		/* history of moves */
 extern	int	movenum;
 extern	int	debug;
 
+extern int interactive;
+extern const char *plyr[];
+
 #define ASSERT(x)
 
 void	bdinit(struct spotstr *);
-void	init_overlap(void);
-int 	g_getline(char *, int);
+int	get_coord(void);
+int	get_key(const char *allowedkeys);
+int	get_line(char *, int);
 void	ask(const char *);
 void	dislog(const char *);
 void	bdump(FILE *);
@@ -272,31 +282,13 @@ void	bdisp_init(void);
 void	cursfini(void);
 void	cursinit(void);
 void	bdwho(int);
-void	panic(const char *) __attribute__((__noreturn__));
-void	glog(const char *);
-void	dlog(const char *);
-void	quit(void) __attribute__((__noreturn__));
-void	quitsig(int) __attribute__((__noreturn__));
+void	panic(const char *, ...) __printflike(1, 2) __dead2;
+void	debuglog(const char *, ...) __printflike(1, 2);
 void	whatsup(int);
-int	readinput(FILE *);
-const char   *g_stoc(int);
-int	g_lton(int);
-int	g_ctos(const char *);
-void	update_overlap(struct spotstr *);
+const char   *cvrt_stoc(int);
+int	cvrt_ctos(const char *);
 int	makemove(int, int);
 int	list_eq(struct combostr **, struct combostr **, int);
 void	clearcombo(struct combostr *, int);
-void	makeempty(struct combostr *);
-void	appendcombo(struct combostr *, int);
-void	updatecombo(struct combostr *, int);
 void	markcombo(struct combostr *);
-void	printcombo(struct combostr *, char *);
-void	makecombo(struct combostr *, struct spotstr *, int, int);
-void	makecombo2(struct combostr *, struct spotstr *, int, int);
-int	sortcombo(struct combostr **, struct combostr **, struct combostr *);
-int	checkframes(struct combostr *, struct combostr *, struct spotstr *,
-		    int, struct ovlp_info *);
-void	addframes(int);
-void	scanframes(int);
-int	better(const struct spotstr *, const struct spotstr *, int);
 int	pickmove(int);

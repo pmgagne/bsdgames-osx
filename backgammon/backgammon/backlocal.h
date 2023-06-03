@@ -1,11 +1,11 @@
-/*	$NetBSD: player.h,v 1.1.1.1 2003/12/26 17:57:03 christos Exp $	*/
+/*	$NetBSD: backlocal.h,v 1.5 2012/10/13 19:19:38 dholland Exp $	*/
 
 /*-
- * Copyright (c) 2003 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Christos Zoulas.
+ * by Luke Mewburn.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -36,42 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * player.h: Player base class
- */
-#ifndef _H_PLAYER
-#define _H_PLAYER
-
-class BOARD;
-
-#include <stdlib.h>
-
-class PLAYER {
-  public:
-    PLAYER(char who);
-    virtual ~PLAYER() {}
-    virtual void play(const BOARD& b, size_t& y, size_t& x, int& dir) = 0;
-
-    // Helper functions
-    void init(void);
-    int domove(BOARD& b);
-
-    // Member access
-    char getWho(void) const { return _who; }
-
-    // Display
-    size_t getScore(void) const { return _score; }
-    size_t getTotal(void) const { return _total; }
-    size_t getGames(void) const { return _games; }
-    size_t getTies(void) const { return _ties;   }
-    void wl(size_t sc);
-
-  private:
-    char _who;
-    size_t _score;
-    size_t _total;
-    size_t _games;
-    size_t _ties;
-};
-
-#endif
+void		dble(void);
+int		dblgood(void);
+int		freemen(int);
+void		move(struct move *, int);
+int		trapped(int, int);
