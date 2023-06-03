@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: move.c,v 1.17 2016/01/08 18:09:59 mestre Exp $	*/
+/*	$NetBSD: move.c,v 1.4 1995/03/24 05:01:57 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,33 +28,20 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)move.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/move.c,v 1.6 1999/12/12 06:17:24 billf Exp $
- * $DragonFly: src/games/mille/move.c,v 1.5 2006/08/27 17:17:23 pavalos Exp $
  */
 
-#include <termios.h>
+#include <ctype.h>
+#ifdef DEBUG
+#include <err.h>
+#include <limits.h>
+#endif
+#include <string.h>
 
 #include "mille.h"
-#include <unctrl.h>
-#include <term.h>
 
 /*
  * @(#)move.c	1.2 (Berkeley) 3/28/83
  */
-
-#undef	CTRL
-#define	CTRL(c)		(c - 'A' + 1)
-
-const char	*Movenames[] = {
-		"M_DISCARD", "M_DRAW", "M_PLAY", "M_ORDER"
-	};
-
-static void check_go(void);
-static void getmove(void);
-static int haspicked(PLAY *);
-static bool playcard(PLAY *);
 
 void
 domove(void)
@@ -65,25 +55,25 @@ domove(void)
 		getmove();
 	else
 		calcmove();
-	Next = false;
-	goodplay = true;
+	Next = FALSE;
+	goodplay = TRUE;
 	switch (Movetype) {
 	  case M_DISCARD:
 		if (haspicked(pp)) {
-			if (pp->hand[Card_no] == C_INIT)
+			if (pp->hand[Card_no] == C_INIT) {
 				if (Card_no == 6)
-					Finished = true;
+					Finished = TRUE;
 				else
 					error("no card there");
-			else {
-				if (issafety(pp->hand[Card_no])) {
+			} else {
+				if (is_safety(pp->hand[Card_no])) {
 					error("discard a safety?");
-					goodplay = false;
+					goodplay = FALSE;
 					break;
 				}
 				Discard = pp->hand[Card_no];
 				pp->hand[Card_no] = C_INIT;
-				Next = true;
+				Next = TRUE;
 				if (Play == PLAYER)
 					account(Discard);
 			}
@@ -109,7 +99,7 @@ domove(void)
 acc:
 			if (Play == COMP) {
 				account(*Topcard);
-				if (issafety(*Topcard))
+				if (is_safety(*Topcard))
 					pp->safety[*Topcard-S_CONV] = S_IN_HAND;
 			}
 			if (pp->hand[1] == C_INIT && Topcard > Deck) {
@@ -121,8 +111,8 @@ acc:
 #endif
 				goto acc;
 			}
-			pp->new_battle = false;
-			pp->new_speed = false;
+			pp->new_battle = FALSE;
+			pp->new_speed = FALSE;
 		}
 		break;
 
@@ -139,11 +129,11 @@ acc:
 	else
 		for (i = 1; i < HAND_SZ; i++)
 			if (pp->hand[i] == C_INIT) {
-				for (j = 0; pp->hand[j] == C_INIT; j++)
-					if (j >= HAND_SZ) {
-						j = 0;
-						break;
-					}
+				for (j = 0; (j < HAND_SZ) &&
+					 (pp->hand[j] == C_INIT); j++)
+					;	
+				if (j == HAND_SZ)
+					j = 0;
 				pp->hand[i] = pp->hand[j];
 				pp->hand[j] = C_INIT;
 			}
@@ -157,7 +147,7 @@ acc:
  *	Check and see if either side can go.  If they cannot,
  * the game is over
  */
-static void
+void
 check_go(void)
 {
 	CARD	card;
@@ -168,11 +158,11 @@ check_go(void)
 		op = (pp == &Player[COMP] ? &Player[PLAYER] : &Player[COMP]);
 		for (i = 0; i < HAND_SZ; i++) {
 			card = pp->hand[i];
-			if (issafety(card) || canplay(pp, op, card)) {
+			if (is_safety(card) || canplay(pp, op, card)) {
 #ifdef DEBUG
 				if (Debug) {
 					fprintf(outf, "CHECK_GO: can play %s (%d), ", C_name[card], card);
-					fprintf(outf, "issafety(card) = %d, ", issafety(card));
+					fprintf(outf, "is_safety(card) = %d, ", is_safety(card));
 					fprintf(outf, "canplay(pp, op, card) = %d\n", canplay(pp, op, card));
 				}
 #endif
@@ -185,10 +175,10 @@ check_go(void)
 #endif
 		}
 	}
-	Finished = true;
+	Finished = TRUE;
 }
 
-static bool
+int
 playcard(PLAY *pp)
 {
 	int	v;
@@ -212,7 +202,7 @@ mustpick:
 	if (Debug)
 		fprintf(outf, "PLAYCARD: Card = %s\n", C_name[card]);
 #endif
-	Next = false;
+	Next = FALSE;
 	switch (card) {
 	  case C_200:
 		if (pp->nummiles[C_200] == 2)
@@ -231,7 +221,7 @@ mustpick:
 		pp->total += v;
 		pp->hand_tot += v;
 		if ((pp->mileage += v) == End)
-			check_ext(false);
+			check_ext(FALSE);
 		break;
 
 	  case C_GAS:	case C_SPARE:	case C_REPAIRS:
@@ -239,16 +229,18 @@ mustpick:
 			return error("can't play \"%s\"", C_name[card]);
 		pp->battle = card;
 		if (pp->safety[S_RIGHT_WAY] == S_PLAYED)
-			pp->can_go = true;
+			pp->can_go = TRUE;
 		break;
 
 	  case C_GO:
 		if (pp->battle != C_INIT && pp->battle != C_STOP
-		    && !isrepair(pp->battle))
+		    && !is_repair(pp->battle))
 			return error("cannot play \"Go\" on a \"%s\"",
 			    C_name[pp->battle]);
+		if (pp->safety[S_RIGHT_WAY] == S_PLAYED)
+			return error("\"Go\" implied by \"Right of Way\"");
 		pp->battle = C_GO;
-		pp->can_go = true;
+		pp->can_go = TRUE;
 		break;
 
 	  case C_END_LIMIT:
@@ -266,8 +258,8 @@ mustpick:
 protected:
 			return error("opponent is protected");
 		pp->battle = card;
-		pp->new_battle = true;
-		pp->can_go = false;
+		pp->new_battle = TRUE;
+		pp->can_go = FALSE;
 		pp = &Player[Play];
 		break;
 
@@ -278,27 +270,19 @@ protected:
 		if (pp->safety[S_RIGHT_WAY] == S_PLAYED)
 			goto protected;
 		pp->speed = C_LIMIT;
-		pp->new_speed = true;
+		pp->new_speed = TRUE;
 		pp = &Player[Play];
 		break;
 
 	  case C_GAS_SAFE:	case C_SPARE_SAFE:
 	  case C_DRIVE_SAFE:	case C_RIGHT_WAY:
-		if (pp->battle == opposite(card)
-		    || (card == C_RIGHT_WAY && pp->speed == C_LIMIT)) {
-			if (!(card == C_RIGHT_WAY && !isrepair(pp->battle))) {
-				pp->battle = C_GO;
-				pp->can_go = true;
-			}
-			if (card == C_RIGHT_WAY && pp->speed == C_LIMIT)
-				pp->speed = C_INIT;
-			if (pp->new_battle
-			    || (pp->new_speed && card == C_RIGHT_WAY)) {
-				pp->coups[card - S_CONV] = true;
-				pp->total += SC_COUP;
-				pp->hand_tot += SC_COUP;
-				pp->coupscore += SC_COUP;
-			}
+		if ((pp->new_battle && pp->battle == opposite(card))
+		    || (pp->new_speed && card == C_RIGHT_WAY)) {
+			/* coup fourre */
+			pp->coups[card - S_CONV] = TRUE;
+			pp->total += SC_COUP;
+			pp->hand_tot += SC_COUP;
+			pp->coupscore += SC_COUP;
 		}
 		/*
 		 * if not coup, must pick first
@@ -312,15 +296,18 @@ protected:
 			pp->total += SC_ALL_SAFE;
 			pp->hand_tot += SC_ALL_SAFE;
 		}
+		if (pp->battle == opposite(card)) {
+			pp->battle = C_GO;
+			pp->can_go = TRUE;
+		}
 		if (card == C_RIGHT_WAY) {
 			if (pp->speed == C_LIMIT)
 				pp->speed = C_INIT;
-			if (pp->battle == C_STOP || pp->battle == C_INIT) {
-				pp->can_go = true;
-				pp->battle = C_INIT;
+			if (pp->battle == C_STOP || pp->battle == C_INIT ||
+			    (!pp->can_go && is_repair(pp->battle))) {
+				pp->can_go = TRUE;
+				pp->battle = C_GO;
 			}
-			if (!pp->can_go && isrepair(pp->battle))
-				pp->can_go = true;
 		}
 		Next = -1;
 		break;
@@ -333,35 +320,35 @@ protected:
 	if (pp == &Player[PLAYER])
 		account(card);
 	pp->hand[Card_no] = C_INIT;
-	Next = ((int)Next == -1 ? false : true);
-	return true;
+	Next = (Next == (bool)-1 ? FALSE : TRUE);
+	return TRUE;
 }
 
-static void
+void
 getmove(void)
 {
 	char	c;
 #ifdef DEBUG
-	char	*sp;
+	char *sp;
 #endif
 #ifdef EXTRAP
-	static bool	last_ex = false;	/* set if last command was E */
+	static bool	last_ex = FALSE;	/* set if last command was E */
 
 	if (last_ex) {
 		undoex();
 		prboard();
-		last_ex = false;
+		last_ex = FALSE;
 	}
 #endif
 	for (;;) {
 		prompt(MOVEPROMPT);
-		leaveok(Board, false);
+		leaveok(Board, FALSE);
 		refresh();
 		while ((c = readch()) == killchar() || c == erasechar())
 			continue;
-		if (islower(c))
-			c = toupper(c);
-		if (isprint(c) && !isspace(c)) {
+		if (islower((unsigned char)c))
+			c = toupper((unsigned char)c);
+		if (isprint((unsigned char)c) && !isspace((unsigned char)c)) {
 			addch(c);
 			refresh();
 		}
@@ -394,7 +381,7 @@ getmove(void)
 		  case 'W':		/* Window toggle */
 			Window = nextwin(Window);
 			newscore();
-			prscore(true);
+			prscore(TRUE);
 			wrefresh(Score);
 			break;
 		  case 'R':		/* Redraw screen */
@@ -402,20 +389,20 @@ getmove(void)
 			wrefresh(curscr);
 			break;
 		  case 'S':		/* Save game */
-			On_exit = false;
+			On_exit = FALSE;
 			save();
 			break;
 		  case 'E':		/* Extrapolate */
 #ifdef EXTRAP
 			if (last_ex)
 				break;
-			Finished = true;
+			Finished = TRUE;
 			if (Window != W_FULL)
 				newscore();
-			prscore(false);
+			prscore(FALSE);
 			wrefresh(Score);
-			last_ex = true;
-			Finished = false;
+			last_ex = TRUE;
+			Finished = FALSE;
 #else
 			error("%c: command not implemented", c);
 #endif
@@ -428,13 +415,14 @@ getmove(void)
 #ifdef DEBUG
 		  case 'Z':		/* Debug code */
 			if (!Debug && outf == NULL) {
-				char	buf[MAXPATHLEN];
-
+				char	buf[PATH_MAX];
+over:
 				prompt(FILEPROMPT);
-				leaveok(Board, false);
+				leaveok(Board, FALSE);
 				refresh();
 				sp = buf;
-				while ((*sp = readch()) != '\n') {
+				while ((*sp = readch()) != '\n' && *sp != '\r'
+				    && (sp - buf < sizeof(buf))) {
 					if (*sp == killchar())
 						goto over;
 					else if (*sp == erasechar()) {
@@ -452,10 +440,10 @@ getmove(void)
 					refresh();
 				}
 				*sp = '\0';
-				leaveok(Board, true);
+				leaveok(Board, TRUE);
 				if ((outf = fopen(buf, "w")) == NULL)
-					perror(buf);
-				setbuf(outf, NULL);
+					warn("%s", buf);
+				setvbuf(outf, NULL, _IONBF, 0);
 			}
 			Debug = !Debug;
 			break;
@@ -466,19 +454,19 @@ getmove(void)
 		}
 	}
 ret:
-	leaveok(Board, true);
+	leaveok(Board, TRUE);
 }
 
 /*
  * return whether or not the player has picked
  */
-static int
-haspicked(PLAY *pp)
+int
+haspicked(const PLAY *pp)
 {
 	int	card;
 
 	if (Topcard <= Deck)
-		return true;
+		return TRUE;
 	switch (pp->hand[Card_no]) {
 	  case C_GAS_SAFE:	case C_SPARE_SAFE:
 	  case C_DRIVE_SAFE:	case C_RIGHT_WAY:
@@ -519,7 +507,7 @@ account(CARD card)
 void
 prompt(int promptno)
 {
-	static const char	*names[] = {
+	static const char	*const names[] = {
 				">>:Move:",
 				"Really?",
 				"Another hand?",

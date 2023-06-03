@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: comp.c,v 1.10 2016/01/08 18:09:59 mestre Exp $	*/
+/*	$NetBSD: comp.c,v 1.4 1995/03/24 05:01:11 cgd Exp $	*/
+
+/*
  * Copyright (c) 1982, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,10 +28,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)comp.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/comp.c,v 1.5 1999/12/12 06:17:24 billf Exp $
- * $DragonFly: src/games/mille/comp.c,v 1.4 2008/06/05 18:06:30 swildner Exp $
  */
 
 #include "mille.h"
@@ -37,7 +36,7 @@
  * @(#)comp.c	1.1 (Berkeley) 4/1/82
  */
 
-#define	V_VALUABLE	40
+# define	V_VALUABLE	40
 
 void
 calcmove(void)
@@ -69,7 +68,7 @@ calcmove(void)
 		switch (card) {
 		  case C_STOP:	case C_CRASH:
 		  case C_FLAT:	case C_EMPTY:
-			if ((playit[i] = canplay(pp, op, card)) != 0)
+			if ((playit[i] = canplay(pp, op, card)))
 				canstop = TRUE;
 			goto norm;
 		  case C_LIMIT:
@@ -120,7 +119,7 @@ norm:
 	if (foundend)
 		foundend = !check_ext(TRUE);
 	for (i = 0; safe && i < HAND_SZ; i++) {
-		if (issafety(pp->hand[i])) {
+		if (is_safety(pp->hand[i])) {
 			if (onecard(op) || (foundend && cango && !canstop)) {
 #ifdef DEBUG
 				if (Debug)
@@ -156,7 +155,7 @@ playsafe:
 			playit[i] = cango;
 		}
 	}
-	if (!pp->can_go && !isrepair(pp->battle))
+	if (!pp->can_go && !is_repair(pp->battle))
 		Numneed[opposite(pp->battle)]++;
 redoit:
 	foundlow = (cango || count[C_END_LIMIT] != 0
@@ -172,7 +171,7 @@ redoit:
 	value = valbuf;
 	for (i = 0; i < HAND_SZ; i++) {
 		card = pp->hand[i];
-		if (issafety(card) || playit[i] == (cango != 0)) {
+		if (is_safety(card) || playit[i] == (cango != 0)) {
 #ifdef DEBUG
 			if (Debug)
 				fprintf(outf, "CALCMOVE: switch(\"%s\")\n",
@@ -183,7 +182,7 @@ redoit:
 				diff = End - pp->mileage;
 				/* avoid getting too close */
 				if (Topcard > Deck && cango && diff <= 100
-				    && (int)diff / Value[card] > count[card]
+				    && diff / Value[card] > count[card]
 				    && (card == C_25 || diff % 50 == 0)) {
 					if (card == C_50 && diff - 50 == 25
 					    && count[C_25] > 0)
@@ -335,8 +334,7 @@ normbad:
 						*value /= ++badcount;
 					if (op->mileage == 0)
 						*value += 5;
-					if ((card == C_LIMIT &&
-					     op->speed == C_LIMIT) ||
+					if ((op->speed == C_LIMIT) ||
 					    !op->can_go)
 						*value -= 5;
 					if (cango && pp->safety[S_RIGHT_WAY] !=
@@ -372,7 +370,7 @@ normbad:
 #endif
 		value++;
 	}
-	if (!pp->can_go && !isrepair(pp->battle))
+	if (!pp->can_go && !is_repair(pp->battle))
 		Numneed[opposite(pp->battle)]++;
 	if (cango) {
 play_it:
@@ -381,7 +379,7 @@ play_it:
 		Card_no = nummax;
 	}
 	else {
-		if (issafety(pp->hand[nummin])) { /* NEVER discard a safety */
+		if (is_safety(pp->hand[nummin])) { /* NEVER discard a safety */
 			nummax = nummin;
 			goto play_it;
 		}
@@ -395,15 +393,15 @@ play_it:
 /*
  * Return true if the given player could conceivably win with his next card.
  */
-bool
-onecard(PLAY *pp)
+int
+onecard(const PLAY *pp)
 {
 	CARD	bat, spd, card;
 
 	bat = pp->battle;
 	spd = pp->speed;
 	card = -1;
-	if (pp->can_go || ((isrepair(bat) || bat == C_STOP || spd == C_LIMIT) &&
+	if (pp->can_go || ((is_repair(bat) || bat == C_STOP || spd == C_LIMIT) &&
 			   Numseen[S_RIGHT_WAY] != 0) ||
 	    (bat >= 0 && Numseen[safety(bat)] != 0))
 		switch (End - pp->mileage) {
@@ -427,8 +425,8 @@ onecard(PLAY *pp)
 	return FALSE;
 }
 
-bool
-canplay(PLAY *pp, PLAY *op, CARD card)
+int
+canplay(const PLAY *pp, const PLAY *op, CARD card)
 {
 	switch (card) {
 	  case C_200:
@@ -464,7 +462,7 @@ canplay(PLAY *pp, PLAY *op, CARD card)
 		break;
 	  case C_GO:
 		if (!pp->can_go &&
-		    (isrepair(pp->battle) || pp->battle == C_STOP))
+		    (is_repair(pp->battle) || pp->battle == C_STOP))
 			return TRUE;
 		break;
 	  case C_END_LIMIT:

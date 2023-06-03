@@ -1,5 +1,4 @@
-/*	$OpenBSD: roll.c,v 1.9 2016/01/08 18:09:59 mestre Exp $	*/
-/*	$NetBSD: roll.c,v 1.4 1995/03/24 05:02:07 cgd Exp $	*/
+/*	$NetBSD: table.c,v 1.7 2004/01/27 20:30:30 jsm Exp $	*/
 
 /*
  * Copyright (c) 1982, 1993
@@ -30,24 +29,44 @@
  * SUCH DAMAGE.
  */
 
-#include <stdlib.h>
+#include <sys/cdefs.h>
+#ifndef lint
+__COPYRIGHT("@(#) Copyright (c) 1982, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n");
+#endif /* not lint */
 
-#include "mille.h"
+#ifndef lint
+#if 0
+static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 5/31/93";
+#else
+__RCSID("$NetBSD: table.c,v 1.7 2004/01/27 20:30:30 jsm Exp $");
+#endif
+#endif /* not lint */
+
+# define	DEBUG
 
 /*
- *	This routine rolls ndie nside-sided dice.
- *
- * @(#)roll.c	1.1 (Berkeley) 4/1/82
- *
+ * @(#)table.c	1.1 (Berkeley) 4/1/82
  */
 
-int
-roll(int ndie, int nsides)
-{
-	int	tot;
+# include	"mille.h"
 
-	tot = 0;
-	while (ndie--)
-		tot += arc4random_uniform(nsides) + 1;
-	return tot;
+int	main(int, char **);
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	int	i, j, count;
+
+	printf("   %16s -> %5s %5s %4s %s\n", "Card", "cards", "count",
+	    "need", "opposite");
+	for (i = 0; i < NUM_CARDS - 1; i++) {
+		for (j = 0, count = 0; j < DECK_SZ; j++)
+			if (Deck[j] == i)
+				count++;
+		printf("%2d %16s -> %5d %5d %4d %s\n", i, C_name[i],
+		    Numcards[i], count, Numneed[i], C_name[opposite(i)]);
+	}
 }

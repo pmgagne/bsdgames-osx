@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: misc.c,v 1.13 2016/01/08 18:09:59 mestre Exp $	*/
+/*	$NetBSD: misc.c,v 1.4 1995/03/24 05:01:54 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,18 +28,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)misc.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/misc.c,v 1.8.2.1 2001/06/13 13:52:14 dwmalone Exp $
- * $DragonFly: src/games/mille/misc.c,v 1.4 2006/08/27 17:17:23 pavalos Exp $
  */
 
-#include <sys/file.h>
-#include <stdarg.h>
-#include <termios.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #include "mille.h"
-#include <term.h>
 
 /*
  * @(#)misc.c	1.2 (Berkeley) 3/28/83
@@ -45,19 +42,17 @@
 #define	NUMSAFE	4
 
 bool
-error(const char *str, ...)
+error(char *str, ...)
 {
-	va_list arg;
+	va_list ap;
 
-	va_start(arg, str);
-	stdscr = Score;
-	move(ERR_Y, ERR_X);
-	vw_printw(stdscr, str, arg);
-	va_end(arg);
-	clrtoeol();
-	putchar('\07');
+	va_start(ap, str);
+	wmove(Score, ERR_Y, ERR_X);
+	vwprintw(Score, str, ap);
+	wclrtoeol(Score);
+	beep();
 	refresh();
-	stdscr = Board;
+	va_end(ap);
 	return FALSE;
 }
 
@@ -84,7 +79,7 @@ getcard(void)
 			c = 0;
 			break;
 		  default:
-			putchar('\07');
+			beep();
 			addch('\b');
 			if (!isprint(c))
 				addch('\b');
@@ -93,7 +88,7 @@ getcard(void)
 		}
 		refresh();
 		if (c >= 0) {
-			while ((c1=readch()) != '\r' && c1 != '\n' && c1 != ' ')
+			while ((c1 = readch()) != '\r' && c1 != '\n' && c1 != ' ')
 				if (c1 == killchar())
 					return -1;
 				else if (c1 == erasechar()) {
@@ -103,34 +98,30 @@ getcard(void)
 					goto cont;
 				}
 				else
-					write(0, "\07", 1);
+					beep();
 			return c;
 		}
 cont:		;
 	}
 }
 
-bool
+int
 check_ext(bool forcomp)
 {
-
-
-	if (End == 700)
+	if (End == 700) {
 		if (Play == PLAYER) {
 			if (getyn(EXTENSIONPROMPT)) {
 extend:
 				if (!forcomp)
 					End = 1000;
 				return TRUE;
-			}
-			else {
+			} else {
 done:
 				if (!forcomp)
 					Finished = TRUE;
 				return FALSE;
 			}
-		}
-		else {
+		} else {
 			PLAY	*pp, *op;
 			int	i, safe, miles;
 
@@ -157,7 +148,7 @@ done:
 				goto extend;
 			goto done;
 		}
-	else
+	} else
 		goto done;
 }
 
@@ -165,7 +156,7 @@ done:
  *	Get a yes or no answer to the given question.  Saves are
  * also allowed.  Return TRUE if the answer was yes, FALSE if no.
  */
-bool
+int
 getyn(int promptno)
 {
 	char	c;
@@ -198,7 +189,7 @@ getyn(int promptno)
 		  default:
 			addstr(unctrl(c));
 			refresh();
-			putchar('\07');
+			beep();
 			break;
 		}
 	}
@@ -213,7 +204,7 @@ void
 check_more(void)
 {
 	On_exit = TRUE;
-	if (Player[PLAYER].total >= 5000 || Player[COMP].total >= 5000)
+	if (Player[PLAYER].total >= 5000 || Player[COMP].total >= 5000) {
 		if (getyn(ANOTHERGAMEPROMPT))
 			return;
 		else {
@@ -227,7 +218,7 @@ check_more(void)
 			Player[COMP].total = 0;
 			Player[PLAYER].total = 0;
 		}
-	else
+	} else
 		if (getyn(ANOTHERHANDPROMPT))
 			return;
 	if (!Saved && getyn(SAVEGAMEPROMPT))
@@ -236,14 +227,14 @@ check_more(void)
 	die(0);
 }
 
-char
+int
 readch(void)
 {
 	int	cnt;
 	static char	c;
 
-	for (cnt = 0; read(0, &c, 1) <= 0; cnt++)
+	for (cnt = 0; read(STDIN_FILENO, &c, 1) <= 0; cnt++)
 		if (cnt > 100)
-			exit(1);
+			die(1);
 	return c;
 }
