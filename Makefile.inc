@@ -15,8 +15,7 @@ BINGRP?=	staff
 SHAREGRP?= 	staff
 
 # cribbed from DragonflyBSD build system
-CFLAGS+=	-std=c11 -Wno-nullability-completeness
-
+COPTS+=		-std=c11 -Werror-implicit-function-declaration -Wno-nullability-completeness
 NXCC?=		${CC}
 NXCFLAGS?=	${CFLAGS:N-mtune*:N-mcpu*:N-march*}
 
