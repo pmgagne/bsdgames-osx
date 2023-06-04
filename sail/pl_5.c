@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: pl_5.c,v 1.9 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: pl_5.c,v 1.4 1995/04/24 12:25:21 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,18 +28,17 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)pl_5.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/pl_5.c,v 1.6 1999/11/30 03:49:37 billf Exp $
- * $DragonFly: src/games/sail/pl_5.c,v 1.3 2006/09/03 17:33:13 pavalos Exp $
  */
 
+#include <ctype.h>
+#include <signal.h>
 #include <string.h>
+
+#include "extern.h"
+#include "machdep.h"
 #include "player.h"
 
 #define turnfirst(x) (*x == 'r' || *x == 'l')
-
-static void parties(int [3], struct ship *, char, char);
 
 void
 acceptmove(void)
@@ -51,13 +53,14 @@ acceptmove(void)
 	char *p;
 
 	if (!mc->crew3 || snagged(ms) || !windspeed) {
-		Signal("Unable to move", NULL);
+		Msg("Unable to move");
 		return;
 	}
 
 	ta = maxturns(ms, &af);
 	ma = maxmove(ms, mf->dir, 0);
-	sprintf(prompt, "move (%d,%c%d): ", ma, af ? '\'' : ' ', ta);
+	(void) snprintf(prompt, sizeof prompt,
+		"move (%d,%c%d): ", ma, af ? '\'' : ' ', ta);
 	sgetstr(prompt, buf, sizeof buf);
 	dir = mf->dir;
 	vma = ma;
@@ -71,8 +74,7 @@ acceptmove(void)
 			else if (dir == 9)
 				dir = 1;
 			if (last == 't') {
-				Signal("Ship can't turn that fast.",
-					NULL);
+				Msg("Ship can't turn that fast.");
 				*p-- = '\0';
 			}
 			last = 't';
@@ -99,8 +101,7 @@ acceptmove(void)
 		case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7':
 			if (last == '0') {
-				Signal("Can't move that fast.",
-					NULL);
+				Msg("Can't move that fast.");
 				*p-- = '\0';
 			}
 			last = '0';
@@ -111,19 +112,18 @@ acceptmove(void)
 				*p-- = '\0';
 			break;
 		default:
-			if (!isspace(*p)) {
-				Signal("Input error.", NULL);
+			if (!isspace((unsigned char)*p)) {
+				Msg("Input error.");
 				*p-- = '\0';
 			}
 		}
 	if ((ta < 0 && moved) || (vma < 0 && moved)
 	    || (af && turnfirst(buf) && moved)) {
-		Signal("Movement error.", NULL);
+		Msg("Movement error.");
 		if (ta < 0 && moved) {
 			if (mf->FS == 1) {
 				Write(W_FS, ms, 0, 0, 0, 0);
-				Signal("No hands to set full sails.",
-					NULL);
+				Msg("No hands to set full sails.");
 			}
 		} else if (ma >= 0)
 			buf[1] = '\0';
@@ -131,16 +131,15 @@ acceptmove(void)
 	if (af && !moved) {
 		if (mf->FS == 1) {
 			Write(W_FS, ms, 0, 0, 0, 0);
-			Signal("No hands to set full sails.",
-				NULL);
+			Msg("No hands to set full sails.");
 		}
 	}
 	if (*buf)
-		strcpy(movebuf, buf);
+		(void) strlcpy(movebuf, buf, sizeof movebuf);
 	else
-		strcpy(movebuf, "d");
+		(void) strlcpy(movebuf, "d", sizeof movebuf);
 	Writestr(W_MOVE, ms, movebuf);
-	Signal("Helm: %s.", NULL, movebuf);
+	Msg("Helm: %s.", movebuf);
 }
 
 void
@@ -178,17 +177,17 @@ acceptboard(void)
 		if (ms->nationality == capship(sp)->nationality)
 			continue;
 		if (meleeing(ms, sp) && crew[2]) {
-			c = sgetch("How many more to board the %s (%c%c)? ",
+			c = sgetch("How many more to board the $$? ",
 				sp, 1);
 			parties(crew, sp, 0, c);
 		} else if ((fouled2(ms, sp) || grappled2(ms, sp)) && crew[2]) {
-			c = sgetch("Crew sections to board the %s (%c%c) (3 max) ?", sp, 1);
+			c = sgetch("Crew sections to board the $$ (3 max) ?", sp, 1);
 			parties(crew, sp, 0, c);
 		}
 	}
 	if (crew[2]) {
 		c = sgetch("How many sections to repel boarders? ",
-			NULL, 1);
+			(struct ship *)0, 1);
 		parties(crew, ms, 1, c);
 	}
 	blockalarm();
@@ -196,20 +195,20 @@ acceptboard(void)
 	unblockalarm();
 }
 
-static void
-parties(int crew[3], struct ship *to, char isdefense, char buf)
+void
+parties(int crew[3], struct ship *to, int isdefense, int buf)
 {
-	int k, j, men;
+	int k, j, men; 
 	struct BP *ptr;
 	int temp[3];
 
 	for (k = 0; k < 3; k++)
 		temp[k] = crew[k];
-	if (isdigit(buf)) {
-		ptr = isdefense ? to->file->DBP : to->file->OBP;
+	if (isdigit((unsigned char)buf)) {
+		ptr = isdefense ? to->file->DBP : to->file->OBP; 
 		for (j = 0; j < NBP && ptr[j].turnsent; j++)
 			;
-		if (!ptr[j].turnsent && buf > '0') {
+		if (j < NBP && buf > '0') {
 			men = 0;
 			for (k = 0; k < 3 && buf > '0'; k++) {
 				men += crew[k]
@@ -219,34 +218,32 @@ parties(int crew[3], struct ship *to, char isdefense, char buf)
 					buf--;
 			}
 			if (buf > '0')
-				Signal("Sending all crew sections.",
-					NULL);
+				Msg("Sending all crew sections.");
 			Write(isdefense ? W_DBP : W_OBP, ms,
 				j, turn, to->file->index, men);
 			if (isdefense) {
-				wmove(slot_w, 2, 0);
+				(void) wmove(slot_w, 2, 0);
 				for (k=0; k < NBP; k++)
 					if (temp[k] && !crew[k])
-						waddch(slot_w, k + '1');
+						(void) waddch(slot_w, k + '1');
 					else
-						wmove(slot_w, 2, 1 + k);
-				mvwaddstr(slot_w, 3, 0, "DBP");
-				makesignal(ms, "repelling boarders",
-					NULL);
+						(void) wmove(slot_w, 2, 1 + k);
+				(void) mvwaddstr(slot_w, 3, 0, "DBP");
+				makemsg(ms, "repelling boarders");
 			} else {
-				wmove(slot_w, 0, 0);
+				(void) wmove(slot_w, 0, 0);
 				for (k=0; k < NBP; k++)
 					if (temp[k] && !crew[k])
-						waddch(slot_w, k + '1');
+						(void) waddch(slot_w, k + '1');
 					else
-						wmove(slot_w, 0, 1 + k);
-				mvwaddstr(slot_w, 1, 0, "OBP");
-				makesignal(ms, "boarding the %s (%c%c)", to);
+						(void) wmove(slot_w, 0, 1 + k);
+				(void) mvwaddstr(slot_w, 1, 0, "OBP");
+				makesignal(ms, "boarding the $$", to);
 			}
 			blockalarm();
-			wrefresh(slot_w);
+			(void) wrefresh(slot_w);
 			unblockalarm();
 		} else
-			Signal("Sending no crew sections.", NULL);
+			Msg("Sending no crew sections.");
 	}
 }

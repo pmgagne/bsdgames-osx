@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: player.h,v 1.8 2015/12/31 16:44:22 mestre Exp $	*/
+/*	$NetBSD: player.h,v 1.4 1995/04/22 10:37:22 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -26,13 +29,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)player.h	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/player.h,v 1.2.6.1 2001/05/01 11:45:08 dwmalone Exp $
- * $DragonFly: src/games/sail/player.h,v 1.2 2003/06/17 04:25:25 dillon Exp $
+ *	@(#)player.h	8.2 (Berkeley) 5/3/95
  */
 
 #include <curses.h>
-#include "externs.h"
 
 /* sizes and coordinates for the screen */
 
@@ -64,8 +64,8 @@
 #define STAT_Y		(STAT_B-STAT_T+1)
 #define STAT_R		(STAT_L+STAT_X-1)
 #define STAT_1		0
-#define STAT_2          (STAT_1+4)
-#define STAT_3          (STAT_2+7)
+#define STAT_2		(STAT_1+4)
+#define STAT_3		(STAT_2+7)
 
 #define SCROLL_T	(BOX_B+1)
 #define SCROLL_L	0
@@ -94,22 +94,22 @@
 #define SCREENTEST()	(initscr() != NULL && STAT_R < COLS && SCROLL_Y > 0)
 #endif
 
-WINDOW *view_w;
-WINDOW *slot_w;
-WINDOW *scroll_w;
-WINDOW *stat_w;
-WINDOW *turn_w;
+extern WINDOW *view_w;
+extern WINDOW *slot_w;
+extern WINDOW *scroll_w;
+extern WINDOW *stat_w;
+extern WINDOW *turn_w;
 
-char done_curses;
-char loaded, fired, changed, repaired;
-char dont_adjust;
-int viewrow, viewcol;
-char movebuf[sizeof SHIP(0)->file->movebuf];
+extern char done_curses;
+extern char loaded, fired, changed, repaired;
+extern char dont_adjust;
+extern int viewrow, viewcol;
+extern char movebuf[sizeof SHIP(0)->file->movebuf];
 extern char version[];
-int player;
-struct ship *ms;		/* memorial structure, &cc->ship[player] */
-struct File *mf;		/* ms->file */
-struct shipspecs *mc;		/* ms->specs */
+extern int player;
+extern struct ship *ms;		/* memorial structure, &cc->ship[player] */
+extern struct File *mf;		/* ms->file */
+extern struct shipspecs *mc;		/* ms->specs */
 
 /* condition codes for leave() */
 #define LEAVE_QUIT	0

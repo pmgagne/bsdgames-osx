@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: assorted.c,v 1.8 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: assorted.c,v 1.3 1995/04/22 10:36:45 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,19 +28,18 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)assorted.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/assorted.c,v 1.5 1999/11/30 03:49:31 billf Exp $
- * $DragonFly: src/games/sail/assorted.c,v 1.3 2006/09/03 17:33:13 pavalos Exp $
  */
 
-#include "externs.h"
+#include <err.h>
+#include <stdlib.h>
+
+#include "extern.h"
 
 static void strike(struct ship *, struct ship *);
 
 void
-table(int rig, int shot, int hittable,
-      struct ship *on, struct ship *from, int roll)
+table(int rig, int shot, int hittable, struct ship *on, struct ship *from,
+    int roll)
 {
 	int hhits = 0, chits = 0, ghits = 0, rhits = 0;
 	int Ghit = 0, Hhit = 0, Rhit = 0, Chit = 0;
@@ -45,8 +47,8 @@ table(int rig, int shot, int hittable,
 	int crew[3];
 	int n;
 	int rigg[4];
-	const char *message = NULL;
-	struct Tables *tp;
+	const char *message;
+	const struct Tables *tp;
 
 	pc = on->file->pcrew;
 	hull = on->specs->hull;
@@ -57,9 +59,9 @@ table(int rig, int shot, int hittable,
 	rigg[1] = on->specs->rig2;
 	rigg[2] = on->specs->rig3;
 	rigg[3] = on->specs->rig4;
-	if (shot == L_GRAPE) {
+	if (shot == L_GRAPE)
 		Chit = chits = hittable;
-	} else {
+	else {
 		tp = &(rig ? RigTable : HullTable)[hittable][roll-1];
 		Chit = chits = tp->C;
 		Rhit = rhits = tp->R;
@@ -76,7 +78,7 @@ table(int rig, int shot, int hittable,
 		pc -= (chits + 1) / 2;
 		chits /= 2;
 	}
-	for (n = 0; n < 3; n++) {
+	for (n = 0; n < 3; n++)
 		if (chits > crew[n]) {
 			chits -= crew[n];
 			crew[n] = 0;
@@ -84,16 +86,14 @@ table(int rig, int shot, int hittable,
 			crew[n] -= chits;
 			chits = 0;
 		}
-	}
-	for (n = 0; n < 3; n++) {
-		if (rhits > rigg[n]) {
+	for (n = 0; n < 3; n++)
+		if (rhits > rigg[n]){
 			rhits -= rigg[n];
 			rigg[n] = 0;
 		} else {
 			rigg[n] -= rhits;
 			rhits = 0;
 		}
-	}
 	if (rigg[3] != -1 && rhits > rigg[3]) {
 		rhits -= rigg[3];
 		rigg[3] = 0;
@@ -101,7 +101,7 @@ table(int rig, int shot, int hittable,
 		rigg[3] -= rhits;
 	}
 	if (rig && !rigg[2] && (!rigg[3] || rigg[3] == -1))
-		makesignal(on, "dismasted!", NULL);
+		makemsg(on, "dismasted!");
 	if (portside(from, on, 0)) {
 		guns = on->specs->gunR;
 		car = on->specs->carR;
@@ -116,7 +116,7 @@ table(int rig, int shot, int hittable,
 		car -= ghits;
 		ghits = 0;
 	}
-	if (ghits > guns) {
+	if (ghits > guns){
 		ghits -= guns;
 		guns = 0;
 	} else {
@@ -139,21 +139,24 @@ table(int rig, int shot, int hittable,
 		Write(W_RIGG, on, rigg[0], rigg[1], rigg[2], rigg[3]);
 	switch (shot) {
 	case L_ROUND:
-		message = "firing round shot on %s (%c%c)";
+		message = "firing round shot on $$";
 		break;
 	case L_GRAPE:
-		message = "firing grape shot on %s (%c%c)";
+		message = "firing grape shot on $$";
 		break;
 	case L_CHAIN:
-		message = "firing chain shot on %s (%c%c)";
+		message = "firing chain shot on $$";
 		break;
 	case L_DOUBLE:
-		message = "firing double shot on %s (%c%c)";
+		message = "firing double shot on $$";
 		break;
 	case L_EXPLODE:
-		message = "exploding shot on %s (%c%c)";
+		message = "exploding shot on $$";
+		break;
+	default:
+		errx(1, "Unknown shot type %d", shot);
 	}
-	makesignal(from, message, on);
+	makesignal(from, "%s", on, message);
 	if (roll == 6 && rig) {
 		switch(Rhit) {
 		case 0:
@@ -177,8 +180,10 @@ table(int rig, int shot, int hittable,
 		case 7:
 			message = "main topmast and mizzen mast shattered";
 			break;
+		default:
+			errx(1, "Bad Rhit = %d", Rhit);
 		}
-		makesignal(on, message, NULL);
+		makemsg(on, "%s", message);
 	} else if (roll == 6) {
 		switch (Hhit) {
 		case 0:
@@ -203,15 +208,29 @@ table(int rig, int shot, int hittable,
 		case 6:
 			message = "shot holes below the water line";
 			break;
+		default:
+			errx(1, "Bad Hhit = %d", Hhit);
 		}
-		makesignal(on, message, NULL);
+		makemsg(on, "%s", message);
 	}
+	/*
+	if (Chit > 1 && on->file->readyL&R_INITIAL && on->file->readyR&R_INITIAL) {
+		on->specs->qual--;
+		if (on->specs->qual <= 0) {
+			makemsg(on, "crew mutinying!");
+			on->specs->qual = 5;
+			Write(W_CAPTURED, on, on->file->index, 0, 0, 0);
+		} else 
+			makemsg(on, "crew demoralized");
+		Write(W_QUAL, on, on->specs->qual, 0, 0, 0);
+	}
+	*/
 	if (!hull)
 		strike(on, from);
 }
 
 void
-Cleansnag(struct ship *from, struct ship *to, char all, char flag)
+Cleansnag(struct ship *from, struct ship *to, int all, int flag)
 {
 	if (flag & 1) {
 		Write(W_UNGRAP, from, to->file->index, all, 0, 0);

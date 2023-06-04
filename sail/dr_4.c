@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: dr_4.c,v 1.5 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: dr_4.c,v 1.3 1995/04/22 10:36:50 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,13 +28,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)dr_4.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/dr_4.c,v 1.5 1999/11/30 03:49:32 billf Exp $
- * $DragonFly: src/games/sail/dr_4.c,v 1.3 2006/09/03 17:33:13 pavalos Exp $
  */
 
-#include "externs.h"
+#include <stdlib.h>
+
+#include "extern.h"
 
 void
 ungrap(struct ship *from, struct ship *to)
@@ -45,7 +46,7 @@ ungrap(struct ship *from, struct ship *to)
 	while (--k >= 0) {
 		if (friend || die() < 3) {
 			cleangrapple(from, to, 0);
-			makesignal(from, "ungrappling %s (%c%c)", to);
+			makesignal(from, "ungrappling $$", to);
 		}
 	}
 }
@@ -57,5 +58,5 @@ grap(struct ship *from, struct ship *to)
 		return;
 	Write(W_GRAP, from, to->file->index, 0, 0, 0);
 	Write(W_GRAP, to, from->file->index, 0, 0, 0);
-	makesignal(from, "grappled with %s (%c%c)", to);
+	makesignal(from, "grappled with $$", to);
 }

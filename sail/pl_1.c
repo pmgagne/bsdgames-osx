@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: pl_1.c,v 1.13 2019/06/28 13:32:52 deraadt Exp $	*/
+/*	$NetBSD: pl_1.c,v 1.3 1995/04/22 10:37:07 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,15 +28,21 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)pl_1.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/pl_1.c,v 1.2 1999/11/30 03:49:36 billf Exp $
- * $DragonFly: src/games/sail/pl_1.c,v 1.4 2006/09/03 17:33:13 pavalos Exp $
  */
 
-#include <sys/types.h>
 #include <sys/wait.h>
+
+#include <errno.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "extern.h"
 #include "player.h"
+
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
 
 /*
  * If we get here before a ship is chosen, then ms == 0 and
@@ -46,35 +55,31 @@
 void
 leave(int conditions)
 {
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGALRM, SIG_IGN);
-	signal(SIGCHLD, SIG_IGN);
+	(void) signal(SIGHUP, SIG_IGN);
+	(void) signal(SIGINT, SIG_IGN);
+	(void) signal(SIGQUIT, SIG_IGN);
+	(void) signal(SIGALRM, SIG_IGN);
+	(void) signal(SIGCHLD, SIG_DFL);
 
 	if (done_curses) {
-		Signal("It looks like you've had it!",
-			NULL);
+		Msg("It looks like you've had it!");
 		switch (conditions) {
 		case LEAVE_QUIT:
 			break;
 		case LEAVE_CAPTURED:
-			Signal("Your ship was captured.",
-				NULL);
+			Msg("Your ship was captured.");
 			break;
 		case LEAVE_HURRICAN:
-			Signal("Hurricane!  All ships destroyed.",
-				NULL);
+			Msg("Hurricane!  All ships destroyed.");
 			break;
 		case LEAVE_DRIVER:
-			Signal("The driver died.", NULL);
+			Msg("The driver died.");
 			break;
 		case LEAVE_SYNC:
-			Signal("Synchronization error.", NULL);
+			Msg("Synchronization error.");
 			break;
 		default:
-			Signal("A funny thing happened (%d).",
-				NULL, conditions);
+			Msg("A funny thing happened (%d).", conditions);
 		}
 	} else {
 		switch (conditions) {
@@ -96,40 +101,39 @@ leave(int conditions)
 	}
 
 	if (ms != 0) {
-		write_log(ms);
+		logger(ms);
 		if (conditions != LEAVE_SYNC) {
-			makesignal(ms, "Captain %s relinquishing.",
-				NULL, mf->captain);
+			makemsg(ms, "Captain %s relinquishing.",
+				mf->captain);
 			Write(W_END, ms, 0, 0, 0, 0);
-			Sync();
+			(void) Sync();
 		}
 	}
 	sync_close(!hasdriver);
+	sleep(5);
 	cleanupscreen();
 	exit(0);
 }
 
 void
-choke(void)
+choke(int n __attribute__((unused)))
 {
 	leave(LEAVE_QUIT);
 }
 
 void
-child(void)
+child(int n __attribute__((unused)))
 {
-#ifdef __DragonFly__
-	union wait status;
-#else
 	int status;
-#endif
 	int pid;
-
-	signal(SIGCHLD, SIG_IGN);
+	int save_errno = errno;
+	
+	(void) signal(SIGCHLD, SIG_DFL);
 	do {
-		pid = wait3((int *)&status, WNOHANG, NULL);
-		if (pid < 0 || (pid > 0 && !WIFSTOPPED(status)))
+		pid = waitpid((pid_t)-1, &status, WNOHANG);
+		if (pid == -1 || (pid > 0 && !WIFSTOPPED(status)))
 			hasdriver = 0;
 	} while (pid > 0);
-	signal(SIGCHLD, (sig_t)child);
+	(void) signal(SIGCHLD, child);
+	errno = save_errno;
 }

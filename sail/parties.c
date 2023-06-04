@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: parties.c,v 1.5 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: parties.c,v 1.3 1995/04/22 10:37:04 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,15 +28,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)parties.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/parties.c,v 1.5 1999/11/30 03:49:35 billf Exp $
- * $DragonFly: src/games/sail/parties.c,v 1.3 2006/09/03 17:33:13 pavalos Exp $
  */
 
-#include "externs.h"
+#include "extern.h"
 
-bool
+int
 meleeing(struct ship *from, struct ship *to)
 {
 	struct BP *p = from->file->OBP;
@@ -45,8 +44,8 @@ meleeing(struct ship *from, struct ship *to)
 	return 0;
 }
 
-bool
-boarding(struct ship *from, char isdefense)
+int
+boarding(struct ship *from, int isdefense)
 {
 	struct BP *p = isdefense ? from->file->DBP : from->file->OBP;
 	struct BP *q = p + NBP;
@@ -58,14 +57,12 @@ boarding(struct ship *from, char isdefense)
 }
 
 void
-unboard(struct ship *ship, struct ship *to, char isdefense)
+unboard(struct ship *ship, struct ship *to, int isdefense)
 {
 	struct BP *p = isdefense ? ship->file->DBP : ship->file->OBP;
 	int n;
 
-	for (n = 0; n < NBP; p++, n++) {
-		if (p->turnsent &&
-		    (p->toship == to || isdefense || ship == to))
+	for (n = 0; n < NBP; p++, n++)
+		if (p->turnsent && (p->toship == to || isdefense || ship == to))
 			Write(isdefense ? W_DBP : W_OBP, ship, n, 0, 0, 0);
-	}
 }

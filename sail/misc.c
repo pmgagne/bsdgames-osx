@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: misc.c,v 1.11 2019/06/28 13:32:52 deraadt Exp $	*/
+/*	$NetBSD: misc.c,v 1.3 1995/04/22 10:37:03 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,19 +28,22 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)misc.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/misc.c,v 1.5 1999/11/30 03:49:34 billf Exp $
  */
 
-#include <sys/file.h>
-#include "externs.h"
+#include <ctype.h>
+#include <err.h>
+#ifdef LOCK_EX
+#include <fcntl.h>
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "extern.h"
 #include "pathnames.h"
 
-#define distance(x,y) \
-	(abs(x) >= abs(y) ? abs(x) + abs(y)/2 : abs(y) + abs(x)/2)
-
-static int angle(int, int);
+#define distance(x,y) (abs(x) >= abs(y) ? abs(x) + abs(y)/2 : abs(y) + abs(x)/2)
 
 /* XXX */
 int
@@ -68,12 +74,12 @@ range(struct ship *from, struct ship *to)
 }
 
 struct ship *
-closestenemy(struct ship *from, char side, char anyship)
+closestenemy(struct ship *from, int side, int anyship)
 {
 	struct ship *sp;
 	char a;
 	int olddist = 30000, dist;
-	struct ship *closest = NULL;
+	struct ship *closest = 0;
 
 	a = capship(from)->nationality;
 	foreachship(sp) {
@@ -94,35 +100,35 @@ closestenemy(struct ship *from, char side, char anyship)
 	return closest;
 }
 
-static int
-angle(int Dr, int Dc)
+int
+angle(int dr, int dc)
 {
 	int i;
 
-	if (Dc >= 0 && Dr > 0)
+	if (dc >= 0 && dr > 0)
 		i = 0;
-	else if (Dr <= 0 && Dc > 0)
+	else if (dr <= 0 && dc > 0)
 		i = 2;
-	else if (Dc <= 0 && Dr < 0)
+	else if (dc <= 0 && dr < 0)
 		i = 4;
 	else
 		i = 6;
-	Dr = abs(Dr);
-	Dc = abs(Dc);
-	if ((i == 0 || i == 4) && Dc * 2.4 > Dr) {
+	dr = abs(dr);
+	dc = abs(dc);
+	if ((i == 0 || i == 4) && dc * 2.4 > dr) {
 		i++;
-		if (Dc > Dr * 2.4)
+		if (dc > dr * 2.4)
 			i++;
-	} else if ((i == 2 || i == 6) && Dr * 2.4 > Dc) {
+	} else if ((i == 2 || i == 6) && dr * 2.4 > dc) {
 		i++;
-		if (Dr > Dc * 2.4)
+		if (dr > dc * 2.4)
 			i++;
 	}
 	return i % 8 + 1;
 }
 
 /* checks for target bow or stern */
-char
+int
 gunsbear(struct ship *from, struct ship *to)
 {
 	int Dr, Dc, i;
@@ -163,25 +169,25 @@ portside(struct ship *from, struct ship *on, int quick)
 	return ang < 5;
 }
 
-char
+int
 colours(struct ship *sp)
 {
-	char flag = '\0';
+	char flag;
 
-	if (sp->file->struck)
+	if (sp->file->struck) {
 		flag = '!';
+		return flag;
+	}
 	if (sp->file->explode)
 		flag = '#';
 	if (sp->file->sink)
 		flag = '~';
-	if (sp->file->struck)
-		return flag;
 	flag = *countryname[capship(sp)->nationality];
-	return sp->file->FS ? flag : tolower(flag);
+	return sp->file->FS ? flag : tolower((unsigned char)flag);
 }
 
 void
-write_log(struct ship *s)
+logger(struct ship *s)
 {
 	FILE *fp;
 	int persons;
@@ -190,10 +196,14 @@ write_log(struct ship *s)
 	float net;
 	struct logs *lp;
 
-	if ((fp = fopen(_PATH_LOGFILE, "r+")) == NULL)
+	setegid(egid);
+	if ((fp = fopen(_PATH_LOGFILE, "r+")) == NULL) {
+		setegid(gid);
 		return;
+	}
+	setegid(gid);
 #ifdef LOCK_EX
-	if (flock(fileno(fp), LOCK_EX) < 0)
+	if (flock(fileno(fp), LOCK_EX) == -1)
 		return;
 #endif
 	net = (float)s->file->points / s->specs->pts;
@@ -202,29 +212,31 @@ write_log(struct ship *s)
 	for (lp = &log[n]; lp < &log[NLOG]; lp++)
 		lp->l_name[0] = lp->l_uid = lp->l_shipnum
 			= lp->l_gamenum = lp->l_netpoints = 0;
-	rewind(fp);
+	if (fseek(fp, 0L, SEEK_SET) == -1)
+		err(1, "fseek");
 	if (persons < 0)
-		putw(1, fp);
+		(void) putw(1, fp);
 	else
-		putw(persons + 1, fp);
+		(void) putw(persons + 1, fp);
 	for (lp = log; lp < &log[NLOG]; lp++)
 		if (net > (float)lp->l_netpoints
 		    / scene[lp->l_gamenum].ship[lp->l_shipnum].specs->pts) {
-			fwrite((char *)log,
+			(void) fwrite((char *)log,
 				sizeof (struct logs), lp - log, fp);
-			strcpy(log[NLOG-1].l_name, s->file->captain);
+			(void) strlcpy(log[NLOG-1].l_name, s->file->captain,
+			    sizeof log[NLOG-1].l_name);
 			log[NLOG-1].l_uid = getuid();
 			log[NLOG-1].l_shipnum = s->file->index;
 			log[NLOG-1].l_gamenum = game;
 			log[NLOG-1].l_netpoints = s->file->points;
-			fwrite((char *)&log[NLOG-1],
+			(void) fwrite((char *)&log[NLOG-1],
 				sizeof (struct logs), 1, fp);
-			fwrite((char *)lp,
+			(void) fwrite((char *)lp,
 				sizeof (struct logs), &log[NLOG-1] - lp, fp);
 			break;
 		}
 #ifdef LOCK_EX
-	flock(fileno(fp), LOCK_UN);
+	(void) flock(fileno(fp), LOCK_UN);
 #endif
-	fclose(fp);
+	(void) fclose(fp);
 }

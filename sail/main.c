@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: main.c,v 1.11 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: main.c,v 1.3 1995/04/22 10:37:01 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,27 +28,34 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#) Copyright (c) 1983, 1993 The Regents of the University of California.  All rights reserved.
- * @(#)main.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/main.c,v 1.5 1999/11/30 03:49:34 billf Exp $
- * $DragonFly: src/games/sail/main.c,v 1.3 2006/09/03 17:33:13 pavalos Exp $
  */
 
-#include "externs.h"
+#include <err.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "extern.h"
 
 int
 main(int argc __unused, char **argv)
 {
+	extern char *__progname;
 	char *p;
 	int i;
+	int fd;
 
-	srandomdev();
-	issetuid = getuid() != geteuid();
-	if ((p = rindex(*argv, '/')))
-		p++;
-	else
-		p = *argv;
+	gid = getgid();
+	egid = getegid();
+	setegid(gid);
+
+	fd = open("/dev/null", O_RDONLY);
+	if (fd < 3)
+		return 1;
+	close(fd);
+
+	p = __progname;
 	if (strcmp(p, "driver") == 0 || strcmp(p, "saildriver") == 0)
 		mode = MODE_DRIVER;
 	else if (strcmp(p, "sail.log") == 0)
@@ -73,27 +83,23 @@ main(int argc __unused, char **argv)
 			nobells++;
 			break;
 		default:
-			fprintf(stderr, "SAIL: Unknown flag %s.\n", p);
-			exit(1);
+			errx(1, "unknown flag %s", p);
 		}
 	if (*argv)
 		game = atoi(*argv);
 	else
 		game = -1;
-
-	if ((i = setjmp(restart)) != 0)
+	if ((i = setjmp(restart)))
 		mode = i;
-
 	switch (mode) {
 	case MODE_PLAYER:
-		return pl_main();
+		pl_main();
 	case MODE_DRIVER:
 		return dr_main();
 	case MODE_LOGGER:
 		return lo_main();
 	default:
-		fprintf(stderr, "SAIL: Unknown mode %d.\n", mode);
+		warnx("Unknown mode %d", mode);
 		abort();
 	}
-	/*NOTREACHED*/
 }

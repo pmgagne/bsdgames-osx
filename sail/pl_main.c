@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: pl_main.c,v 1.16 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: pl_main.c,v 1.5 1995/04/24 12:25:25 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,39 +28,32 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)pl_main.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/pl_main.c,v 1.6 1999/11/30 03:49:38 billf Exp $
- * $DragonFly: src/games/sail/pl_main.c,v 1.4 2006/09/03 17:33:13 pavalos Exp $
  */
 
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <err.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "extern.h"
 #include "player.h"
 
-static void initialize(void);
-
-/*ARGSUSED*/
-int
+void
 pl_main(void)
 {
-
-	if (!SCREENTEST()) {
-		printf("Can't sail on this terminal.\n");
-		exit(1);
-	}
 	initialize();
-	Signal("Aye aye, Sir", NULL);
+	Msg("Aye aye, Sir");
 	play();
-	return 0;			/* for lint,  play() never returns */
 }
 
-static void
+void
 initialize(void)
 {
 	struct File *fp;
 	struct ship *sp;
-	char captain[80];
+	char captain[20];
 	char message[60];
 	int load;
 	int n;
@@ -65,8 +61,8 @@ initialize(void)
 	int nat[NNATION];
 
 	if (game < 0) {
-		puts("Choose a scenario:\n");
-		puts("\n\tNUMBER\tSHIPS\tIN PLAY\tTITLE");
+		(void) puts("Choose a scenario:\n");
+		(void) puts("\n\tNUMBER\tSHIPS\tIN PLAY\tTITLE");
 		for (n = 0; n < NSCENE; n++) {
 			/* ( */
 			printf("\t%d):\t%d\t%s\t%s\n", n, scene[n].vessels,
@@ -75,15 +71,13 @@ initialize(void)
 		}
 reprint:
 		printf("\nScenario number? ");
-		fflush(stdout);
-		scanf("%d", &game);
-		while (getchar() != '\n')
+		(void) fflush(stdout);
+		(void) scanf("%d", &game);
+		while (getchar() != '\n' && !feof(stdin))
 			;
 	}
-	if (game < 0 || game >= NSCENE) {
-		puts("Very funny.");
-		exit(1);
-	}
+	if (game < 0 || game >= NSCENE)
+		errx(1, "Very funny.");
 	cc = &scene[game];
 	ls = SHIP(cc->vessels);
 
@@ -91,10 +85,8 @@ reprint:
 		nat[n] = 0;
 	foreachship(sp) {
 		if (sp->file == NULL &&
-		    (sp->file = calloc(1, sizeof (struct File))) == NULL) {
-			puts("OUT OF MEMORY");
-			exit(1);
-		}
+		    (sp->file = calloc(1, sizeof (struct File))) == NULL)
+			err(1, NULL);
 		sp->file->index = sp - SHIP(0);
 		sp->file->stern = nat[sp->nationality]++;
 		sp->file->dir = sp->shipdir;
@@ -104,18 +96,16 @@ reprint:
 	windspeed = cc->windspeed;
 	winddir = cc->winddir;
 
-	signal(SIGHUP, (sig_t)choke);
-	signal(SIGINT, (sig_t)choke);
+	(void) signal(SIGHUP, choke);
+	(void) signal(SIGINT, choke);
 
 	hasdriver = sync_exists(game);
-	if (sync_open() < 0) {
-		perror("sail: syncfile");
-		exit(1);
-	}
+	if (sync_open() < 0)
+		err(1, "syncfile");
 
 	if (hasdriver) {
-		puts("Synchronizing with the other players...");
-		fflush(stdout);
+		(void) puts("Synchronizing with the other players...");
+		(void) fflush(stdout);
 		if (Sync() < 0)
 			leave(LEAVE_SYNC);
 	}
@@ -125,9 +115,9 @@ reprint:
 			    && sp->file->captured == 0)
 				break;
 		if (sp >= ls) {
-			puts("All ships taken in that scenario.");
+			(void) puts("All ships taken in that scenario.");
 			foreachship(sp)
-				free(sp->file);
+				free((char *)sp->file);
 			sync_close(0);
 			people = 0;
 			goto reprint;
@@ -144,15 +134,19 @@ reprint:
 					sp->specs->pts,
 					saywhat(sp, 1));
 			printf("\nWhich ship (0-%d)? ", cc->vessels-1);
-			fflush(stdout);
+			(void) fflush(stdout);
 			if (scanf("%d", &player) != 1 || player < 0
 			    || player >= cc->vessels) {
-				while (getchar() != '\n')
+				while (getchar() != '\n' && !feof(stdin))
 					;
-				puts("Say what?");
+				if (feof(stdin)) {
+					printf("\nExiting...\n");
+					leave(LEAVE_QUIT);
+				}
+				(void) puts("Say what?");
 				player = -1;
 			} else
-				while (getchar() != '\n')
+				while (getchar() != '\n' && !feof(stdin))
 					;
 		}
 		if (player < 0)
@@ -161,7 +155,7 @@ reprint:
 			leave(LEAVE_SYNC);
 		fp = SHIP(player)->file;
 		if (fp->captain[0] || fp->struck || fp->captured != 0)
-			puts("That ship is taken.");
+			(void) puts("That ship is taken.");
 		else
 			break;
 	}
@@ -174,12 +168,11 @@ reprint:
 	if (Sync() < 0)
 		leave(LEAVE_SYNC);
 
-	signal(SIGCHLD, (sig_t)child);
+	(void) signal(SIGCHLD, child);
 	if (!hasdriver)
 		switch (fork()) {
 		case 0:
 			longjmp(restart, MODE_DRIVER);
-			/*NOTREACHED*/
 		case -1:
 			perror("fork");
 			leave(LEAVE_FORK);
@@ -191,16 +184,16 @@ reprint:
 	printf("Your ship is the %s, a %d gun %s (%s crew).\n",
 		ms->shipname, mc->guns, classname[mc->class],
 		qualname[mc->qual]);
-	if ((nameptr = getenv("SAILNAME")) && *nameptr)
-		strncpy(captain, nameptr, sizeof captain);
+	if ((nameptr = (char *) getenv("SAILNAME")) && *nameptr)
+		(void) strlcpy(captain, nameptr, sizeof captain);
 	else {
-		printf("Your name, Captain? ");
-		fflush(stdout);
-		fgets(captain, sizeof captain, stdin);
-		if (!*captain)
-			strcpy(captain, "no name");
-		else
-			captain[sizeof(captain) - 1] = '\0';
+		(void) printf("Your name, Captain? ");
+		(void) fflush(stdout);
+		if (fgets(captain, sizeof captain, stdin) == NULL ||
+		    captain[0] == '\0' || captain[0] == '\n')
+			(void) strlcpy(captain, "no name", sizeof captain);
+		else if (captain[strlen(captain) - 1] == '\n')
+		    captain[strlen(captain) - 1] = '\0';
 	}
 	Writestr(W_CAPTAIN, ms, captain);
 	for (n = 0; n < 2; n++) {
@@ -208,8 +201,8 @@ reprint:
 
 		printf("\nInitial broadside %s (grape, chain, round, double): ",
 			n ? "right" : "left");
-		fflush(stdout);
-		scanf("%9s", buf);
+		(void) fflush(stdout);
+		(void) scanf("%9s", buf);
 		switch (*buf) {
 		case 'g':
 			load = L_GRAPE;
@@ -235,10 +228,12 @@ reprint:
 		}
 	}
 
+	printf("\n");
+	(void) fflush(stdout);
 	initscreen();
 	draw_board();
-	snprintf(message, sizeof message, "Captain %s assuming command",
-		 captain);
+	(void) snprintf(message, sizeof message, "Captain %s assuming command",
+			captain);
 	Writestr(W_SIGNAL, ms, message);
-	newturn();
+	newturn(0);
 }

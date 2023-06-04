@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: machdep.h,v 1.3 2003/06/03 03:01:41 millert Exp $	*/
+/*	$NetBSD: machdep.h,v 1.4 1995/04/28 21:30:16 mycroft Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -27,7 +30,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)machdep.h	8.1 (Berkeley) 5/31/93
- * $DragonFly: src/games/sail/machdep.h,v 1.2 2006/09/03 17:33:13 pavalos Exp $
  */
 
 #define TIMEOUT 300				/* Sync() timeout in seconds */
@@ -38,12 +40,12 @@
 		sigset_t sigset;					\
 		sigemptyset(&sigset);					\
 		sigaddset(&sigset, SIGALRM);				\
-		sigprocmask(SIG_BLOCK, &sigset, NULL);			\
+		sigprocmask(SIG_BLOCK, &sigset, (sigset_t *)0);		\
 	} while (0)
 #define	unblockalarm() \
 	do {								\
 		sigset_t sigset;					\
 		sigemptyset(&sigset);					\
 		sigaddset(&sigset, SIGALRM);				\
-		sigprocmask(SIG_UNBLOCK, &sigset, NULL);		\
+		sigprocmask(SIG_UNBLOCK, &sigset, (sigset_t *)0);	\
 	} while (0)
