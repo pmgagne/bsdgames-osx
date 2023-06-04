@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: pl_2.c,v 1.6 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: pl_2.c,v 1.3 1995/04/22 10:37:08 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,11 +28,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)pl_2.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/pl_2.c,v 1.4 1999/11/30 03:49:36 billf Exp $
  */
 
+#include <signal.h>
+
+#include "extern.h"
+#include "machdep.h"
 #include "player.h"
 
 void
@@ -38,7 +42,7 @@ play(void)
 	struct ship *sp;
 
 	for (;;) {
-		switch (sgetch("~\b", NULL, 0)) {
+		switch (sgetch("~\b", (struct ship *)0, 0)) {
 		case 'm':
 			acceptmove();
 			break;
@@ -52,7 +56,7 @@ play(void)
 			unfoulplayer();
 			break;
 		case 'v':
-			Signal("%s", NULL, version);
+			Msg("%s", version);
 			break;
 		case 'b':
 			acceptboard();
@@ -70,7 +74,7 @@ play(void)
 			repair();
 			break;
 		case 'B':
-			Signal("'Hands to stations!'", NULL);
+			Msg("'Hands to stations!'");
 			unboard(ms, ms, 1);	/* cancel DBP's */
 			unboard(ms, ms, 0);	/* cancel offense */
 			break;
@@ -86,10 +90,10 @@ play(void)
 			mf->loadR = L_EMPTY;
 			mf->readyL = R_EMPTY;
 			mf->readyR = R_EMPTY;
-			Signal("Broadsides unloaded", NULL);
+			Msg("Broadsides unloaded");
 			break;
 		case 'q':
-			Signal("Type 'Q' to quit", NULL);
+			Msg("Type 'Q' to quit");
 			break;
 		case 'Q':
 			leave(LEAVE_QUIT);
@@ -100,8 +104,8 @@ play(void)
 					eyeball(sp);
 			break;
 		case 'i':
-			if ((sp = closestenemy(ms, 0, 1)) == NULL)
-				Signal("No more ships left.", NULL);
+			if ((sp = closestenemy(ms, 0, 1)) == 0)
+				Msg("No more ships left.");
 			else
 				eyeball(sp);
 			break;

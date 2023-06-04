@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: dr_5.c,v 1.5 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: dr_5.c,v 1.3 1995/04/22 10:36:51 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,15 +28,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)dr_5.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/dr_5.c,v 1.4 1999/11/30 03:49:33 billf Exp $
  */
 
-#include "externs.h"
+#include "extern.h"
 
 void
-subtract(struct ship *from, int totalfrom, int crewfrom[3], struct ship *fromcap, int pcfrom)
+subtract(struct ship *from, int totalfrom, int crewfrom[3],
+    struct ship *fromcap, int pcfrom)
 {
 	int n;
 
@@ -55,9 +56,11 @@ subtract(struct ship *from, int totalfrom, int crewfrom[3], struct ship *fromcap
 	}
 }
 
+/* returns # of crew squares sent */
 int
-mensent(struct ship *from, struct ship *to, int crew[3], struct ship **captured, int *pc, char isdefense)
-{					/* returns # of crew squares sent */
+mensent(struct ship *from, struct ship *to, int crew[3], struct ship **captured,
+    int *pc, int isdefense)
+{
 	int men = 0;
 	int n;
 	int c1, c2, c3;
@@ -77,7 +80,7 @@ mensent(struct ship *from, struct ship *to, int crew[3], struct ship **captured,
 		c1 = men/100 ? crew[0] : 0;
 		c2 = (men%100)/10 ? crew[1] : 0;
 		c3 = men/10 ? crew[2] : 0;
-		c3 = *captured == NULL ? crew[2] : *pc;
+		c3 = *captured == 0 ? crew[2] : *pc;
 	} else
 		c1 = c2 = c3 = 0;
 	return(c1 + c2 + c3);

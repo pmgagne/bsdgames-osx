@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: dr_main.c,v 1.8 2016/01/08 20:26:33 mestre Exp $	*/
+/*	$NetBSD: dr_main.c,v 1.4 1995/04/22 10:36:52 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,13 +28,16 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)dr_main.c	8.2 (Berkeley) 4/16/94
- * $FreeBSD: src/games/sail/dr_main.c,v 1.4 1999/11/30 03:49:33 billf Exp $
- * $DragonFly: src/games/sail/dr_main.c,v 1.3 2006/09/03 17:33:13 pavalos Exp $
  */
 
+#include <err.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include "driver.h"
+#include "extern.h"
+#include "player.h"
 
 int
 dr_main(void)
@@ -41,27 +47,21 @@ dr_main(void)
 	int nat[NNATION];
 	int value = 0;
 
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGTSTP, SIG_IGN);
-	if (issetuid)
-		setuid(geteuid());
-	if (game < 0 || game >= NSCENE) {
-		fprintf(stderr, "DRIVER: Bad game number %d\n", game);
-		exit(1);
-	}
+	(void) signal(SIGINT, SIG_IGN);
+	(void) signal(SIGQUIT, SIG_IGN);
+	(void) signal(SIGTSTP, SIG_IGN);
+	if (game < 0 || game >= NSCENE)
+		errx(1, "driver: Bad game number %d", game);
 	cc = &scene[game];
 	ls = SHIP(cc->vessels);
-	if (sync_open() < 0) {
-		perror("driver: syncfile");
-		exit(1);
-	}
+	if (sync_open() < 0)
+		err(1, "driver: syncfile");
 	for (n = 0; n < NNATION; n++)
 		nat[n] = 0;
 	foreachship(sp) {
 		if (sp->file == NULL &&
 		    (sp->file = calloc(1, sizeof (struct File))) == NULL) {
-			fprintf(stderr, "DRIVER: Out of memory.\n");
+			(void) fprintf(stderr, "DRIVER: Out of memory.\n");
 			exit(1);
 		}
 		sp->file->index = sp - SHIP(0);

@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: lo_main.c,v 1.11 2016/01/13 13:10:26 gsoares Exp $	*/
+/*	$NetBSD: lo_main.c,v 1.3 1995/04/22 10:36:59 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,9 +28,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)lo_main.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/lo_main.c,v 1.2 1999/11/30 03:49:34 billf Exp $
  */
 
 /*
@@ -35,12 +35,15 @@
  *
  * -l force a long listing (print out real usernames)
  */
-#include <sys/types.h>
+#include <limits.h>
 #include <pwd.h>
-#include "externs.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "extern.h"
 #include "pathnames.h"
 
-const char *title[] = {
+const char *const title[] = {
 	"Admiral", "Commodore", "Captain", "Captain",
 	"Captain", "Captain", "Captain", "Commander",
 	"Commander", "Lieutenant"
@@ -50,17 +53,17 @@ int
 lo_main(void)
 {
 	FILE *fp;
-	char sbuf[32];
-	int n = 0, ppl;
+	char sbuf[20+LOGIN_NAME_MAX];
+	int n = 0, people;
 	struct passwd *pass;
 	struct logs log;
 	struct ship *ship;
 
-	if ((fp = fopen(_PATH_LOGFILE, "r")) == NULL) {
+	if ((fp = fopen(_PATH_LOGFILE, "r")) == 0) {
 		perror(_PATH_LOGFILE);
 		exit(1);
 	}
-	switch (fread((char *)&ppl, sizeof ppl, 1, fp)) {
+	switch (fread((char *)&people, sizeof people, 1, fp)) {
 	case 0:
 		printf("Nobody has sailed yet.\n");
 		exit(0);
@@ -73,15 +76,16 @@ lo_main(void)
 	while (fread((char *)&log, sizeof log, 1, fp) == 1 &&
 	       log.l_name[0] != '\0') {
 		if (longfmt && (pass = getpwuid(log.l_uid)) != NULL)
-			sprintf(sbuf, "%10.10s (%s)",
+			(void) snprintf(sbuf, sizeof sbuf, "%10.10s (%s)",
 				log.l_name, pass->pw_name);
 		else
-			sprintf(sbuf, "%20.20s", log.l_name);
+			(void) snprintf(sbuf, sizeof sbuf, "%20.20s", log.l_name);
 		ship = &scene[log.l_gamenum].ship[log.l_shipnum];
 		printf("%-10s %21s of the %15s %3d points, %5.2f equiv\n",
 			title[n++], sbuf, ship->shipname, log.l_netpoints,
 			(float) log.l_netpoints / ship->specs->pts);
 	}
-	printf("\n%d people have played.\n", ppl);
+	printf("\n%d people have played.\n", people);
+	fclose(fp);
 	return 0;
 }

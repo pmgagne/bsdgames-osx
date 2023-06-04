@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: globals.c,v 1.7 2009/10/27 23:59:27 deraadt Exp $	*/
+/*	$NetBSD: globals.c,v 1.4 1995/04/22 10:36:57 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,24 +28,9 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)globals.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/sail/globals.c,v 1.3 1999/11/30 03:49:34 billf Exp $
- * $DragonFly: src/games/sail/globals.c,v 1.3 2006/09/03 17:33:13 pavalos Exp $
  */
 
-#include "externs.h"
-
-int mode;
-jmp_buf restart;
-        /* command line flags */
-char debug;                             /* -D */
-char randomize;                         /* -x, give first available ship */
-char longfmt;                           /* -l, print score in long format */
-char nobells;                           /* -b, don't ring bell before Signal */
-
-        /* other initial modes */
-char issetuid;                          /* running setuid */
+#include "extern.h"
 
 struct scenario scene[] = {
 	/*
@@ -50,7 +38,7 @@ struct scenario scene[] = {
 	 * int windspeed;
 	 * int windchange;
 	 * int vessels;
-	 * const char *name;
+	 * char *name;
 	 * struct ship ship[NSHIP];
 	 */
 	{ 5, 3, 5, 2, "Ranger vs. Drake",
@@ -249,7 +237,7 @@ struct scenario scene[] = {
 			{ "Turenne",		specs+10, N_F,  9, 35, 6, 0 },
 			{ "Nightmare",		specs+9,  N_F,  7, 37, 6, 0 },
 			{ "Paris",		specs+53, N_F,  3, 45, 4, 0 },
-			{ "Napolean",		specs+56, N_F,  1, 40, 6, 0 }
+			{ "Napoleon",		specs+56, N_F,  1, 40, 6, 0 }
 		}
 	},
 	{ 6, 4, 7, 5, "Cape Horn",
@@ -406,10 +394,7 @@ struct shipspecs specs[] = {
 /*                 class   qual   crew2    gunL   carL   rig1  rig3        */
 };
 
-struct scenario *cc;            /* the current scenario */
-struct ship *ls;                /* &cc->ship[cc->vessels] */
-
-struct windeffects WET[7][6] = {
+const struct windeffects WET[7][6] = {
 	{ {9,9,9,9}, {9,9,9,9}, {9,9,9,9}, {9,9,9,9}, {9,9,9,9}, {9,9,9,9} },
 	{ {3,2,2,0}, {3,2,1,0}, {3,2,1,0}, {3,2,1,0}, {2,1,0,0}, {2,1,0,0} },
 	{ {1,1,1,0}, {1,1,0,0}, {1,0,0,0}, {1,0,0,0}, {1,0,0,0}, {1,0,0,0} },
@@ -419,7 +404,7 @@ struct windeffects WET[7][6] = {
 	{ {2,1,1,0}, {3,2,1,0}, {3,2,1,0}, {3,2,1,0}, {3,3,2,0}, {3,3,2,0} }
 };
 
-struct Tables RigTable[11][6] = {
+const struct Tables RigTable[11][6] = {
 	{ {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,1}, {0,0,1,0} },
 	{ {0,0,0,0}, {0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {1,0,0,1}, {0,1,1,1} },
 	{ {0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,0,1}, {1,0,1,2} },
@@ -432,7 +417,8 @@ struct Tables RigTable[11][6] = {
 	{ {1,1,0,4}, {1,0,1,4}, {2,0,0,5}, {0,2,1,5}, {0,1,2,6}, {0,2,0,7} },
 	{ {1,0,1,5}, {0,2,0,6}, {1,2,0,6}, {1,1,1,6}, {2,0,2,6}, {1,1,2,7} }
 };
-struct Tables HullTable[11][6] = {
+
+const struct Tables HullTable[11][6] = {
 	{ {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {1,0,0,0}, {0,1,0,0} },
 	{ {0,0,0,0}, {0,0,0,0}, {0,1,0,0}, {1,1,0,0}, {1,0,1,0}, {1,0,1,1} },
 	{ {0,1,0,0}, {1,0,0,0}, {1,1,0,0}, {1,0,1,0}, {1,0,1,1}, {2,1,0,0} },
@@ -446,7 +432,7 @@ struct Tables HullTable[11][6] = {
 	{ {2,2,4,0}, {3,3,1,1}, {4,2,1,1}, {5,1,0,2}, {5,1,2,1}, {6,2,2,0} },
 };
 
-char AMMO[9][4] = {
+const char AMMO[9][4] = {
 	{ -1, 1, 0, 1 },
 	{ -1, 1, 0, 1 },
 	{ -1, 1, 0, 1 },
@@ -457,8 +443,8 @@ char AMMO[9][4] = {
 	{ -3, 2, 0, 3 },
 	{ -3, 2, 0, 3 }
 };
-
-char HDT[9][10] = {
+	
+const char HDT[9][10] = {
 	{ 1, 0,-1,-2,-3,-3,-4,-4,-4,-4 },
 	{ 1, 1, 0,-1,-2,-2,-3,-3,-3,-3 },
 	{ 2, 1, 0,-1,-2,-2,-3,-3,-3,-3 },
@@ -470,7 +456,7 @@ char HDT[9][10] = {
 	{ 5, 4, 3, 2, 1, 1, 0, 0, 0, 0 }
 };
 
-char HDTrake[9][10] = {
+const char HDTrake[9][10] = {
 	{ 2, 1, 0,-1,-2,-2,-3,-3,-3,-3 },
 	{ 2, 2, 1, 0,-1,-1,-2,-2,-2,-2 },
 	{ 3, 2, 1, 0,-1,-1,-2,-2,-2,-2 },
@@ -482,7 +468,7 @@ char HDTrake[9][10] = {
 	{ 9, 8, 7, 6, 5, 5, 4, 4, 4, 4 }
 };
 
-char QUAL[9][5] = {
+const char QUAL[9][5] = {
 	{ -1, 0, 0, 1, 1 },
 	{ -1, 0, 0, 1, 1 },
 	{ -1, 0, 0, 1, 2 },
@@ -494,7 +480,7 @@ char QUAL[9][5] = {
 	{ -2,-1, 0, 2, 3 }
 };
 
-char MT[9][3] = {
+const char MT[9][3] = {
 	{ 1, 0, 0 },
 	{ 1, 1, 0 },
 	{ 2, 1, 0 },
@@ -506,7 +492,7 @@ char MT[9][3] = {
 	{ 4, 4, 2 }
 };
 
-char rangeofshot[] = {
+const char rangeofshot[] = {
 	0,
 	1,		/* grape */
 	3,		/* chain */
@@ -514,12 +500,12 @@ char rangeofshot[] = {
 	1		/* double */
 };
 
-const char *countryname[] = {
+const char *const countryname[] = {
 	"American", "British", "Spanish", "French", "Japanese",
 	"Federation", "Klingon", "Orion"
 };
 
-const char *classname[] = {
+const char *const classname[] = {
 	"Drift wood",
 	"Ship of the Line",
 	"Ship of the Line",
@@ -529,7 +515,7 @@ const char *classname[] = {
 	"Brig"
 };
 
-const char *directionname[] = {
+const char *const directionname[] = {
 	"dead ahead",
 	"off the starboard bow",
 	"off the starboard beam",
@@ -541,19 +527,27 @@ const char *directionname[] = {
 	"dead ahead"
 };
 
-const char *qualname[] = {
-	"dead",
-	"mutinous",
-	"green",
-	"mundane",
-	"crack",
-	"elite"
+const char *const qualname[] = {
+	"dead", "mutinous", "green", "mundane", "crack", "elite"
 };
 
-char loadname[] = { '-', 'G', 'C', 'R', 'D', 'E' };
+const char loadname[] = { '-', 'G', 'C', 'R', 'D', 'E' };
 
-char dr[] = { 0, 1, 1, 0, -1, -1, -1, 0, 1 };
-char dc[] = { 0, 0, -1, -1, -1, 0, 1, 1, 1 };
+const char dr[] = { 0, 1, 1, 0, -1, -1, -1, 0, 1 };
+const char dc[] = { 0, 0, -1, -1, -1, 0, 1, 1, 1 };
+
+int mode;
+jmp_buf restart;
+
+char debug;				/* -D */
+char randomize;				/* -x, give first available ship */
+char longfmt;				/* -l, print score in long format */
+char nobells;				/* -b, don't ring bell before Signal */
+
+gid_t gid, egid;
+
+struct scenario *cc;		/* the current scenario */
+struct ship *ls;		/* &cc->ship[cc->vessels] */
 
 int winddir;
 int windspeed;

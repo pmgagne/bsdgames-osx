@@ -10,6 +10,7 @@ MAN=	sail.6
 DPADD=	${LIBCURSES}
 LDADD=	-lcurses
 HIDEGAME=hidegame
+COPTS+= -Wno-incompatible-pointer-types-discards-qualifiers -Wno-sign-compare -DLOGIN_NAME_MAX=255 -Wno-error=shadow
 
 beforeinstall:
 .if !exists(${BINDIR})
