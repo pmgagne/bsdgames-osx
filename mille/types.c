@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: types.c,v 1.10 2016/01/08 18:09:59 mestre Exp $	*/
+/*	$NetBSD: types.c,v 1.4 1995/03/24 05:02:22 cgd Exp $	*/
+
+/*
  * Copyright (c) 1982, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,11 +28,9 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)types.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/types.c,v 1.5 1999/12/12 06:17:25 billf Exp $
- * $DragonFly: src/games/mille/types.c,v 1.3 2006/08/27 17:17:23 pavalos Exp $
  */
+
+#include <err.h>
 
 #include "mille.h"
 
@@ -38,14 +39,13 @@
  */
 
 int
-isrepair(CARD card)
+is_repair(CARD card)
 {
-
 	return card == C_GAS || card == C_SPARE ||
 	    card == C_REPAIRS || card == C_INIT;
 }
 
-CARD
+int
 safety(CARD card)
 {
 	switch (card) {
@@ -68,6 +68,5 @@ safety(CARD card)
 	  case C_END_LIMIT:
 		return C_RIGHT_WAY;
 	}
-	/* NOTREACHED */
-	exit(EXIT_FAILURE);
+	errx(1, "safety() failed; please submit bug report.");
 }

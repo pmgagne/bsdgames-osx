@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: save.c,v 1.14 2019/06/28 13:32:52 deraadt Exp $	*/
+/*	$NetBSD: save.c,v 1.4 1995/03/24 05:02:13 cgd Exp $	*/
+
+/*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,25 +28,18 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)save.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/save.c,v 1.6 1999/12/12 06:17:24 billf Exp $
- * $DragonFly: src/games/mille/save.c,v 1.5 2006/08/27 17:17:23 pavalos Exp $
  */
 
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/uio.h>
+
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include "mille.h"
-
-#include <unctrl.h>
-#include <term.h>
 #include <time.h>
+#include <unistd.h>
+
+#include "mille.h"
 
 /*
  * @(#)save.c	1.2 (Berkeley) 3/28/83
@@ -52,16 +48,16 @@
 typedef	struct stat	STAT;
 
 /*
- *	This routine saves the current game for use at a later date
- *	Returns whether or not it could be done.
+ *	This routine saves the current game for use at a later date.
+ *	Returns FALSE if it couldn't be done.
  */
 bool
 save(void)
 {
 	char	*sp;
-	int	outfd;
+	int	outfile;
 	time_t	*tp;
-	char	buf[80];
+	char	buf[256];
 	time_t	tme;
 	STAT	junk;
 	bool	rv;
@@ -69,14 +65,15 @@ save(void)
 	sp = NULL;
 	tp = &tme;
 	if (Fromfile && getyn(SAMEFILEPROMPT))
-		strcpy(buf, Fromfile);
+		strlcpy(buf, Fromfile, sizeof(buf));
 	else {
 over:
 		prompt(FILEPROMPT);
 		leaveok(Board, FALSE);
 		refresh();
 		sp = buf;
-		while ((*sp = readch()) != '\n') {
+		while ((*sp = readch()) != '\n' && *sp != '\r' &&
+		    (sp - buf < (int)sizeof(buf))) {
 			if (*sp == killchar())
 				goto over;
 			else if (*sp == erasechar()) {
@@ -111,19 +108,19 @@ over:
 	    && getyn(OVERWRITEFILEPROMPT) == FALSE))
 		return FALSE;
 
-	if ((outfd = creat(buf, 0644)) < 0) {
+	if ((outfile = open(buf, O_CREAT | O_TRUNC | O_WRONLY, 0644)) == -1) {
 		error(strerror(errno));
 		return FALSE;
 	}
 	mvwaddstr(Score, ERR_Y, ERR_X, buf);
 	wrefresh(Score);
 	time(tp);			/* get current time		*/
-	rv = varpush(outfd, writev);
-	close(outfd);
-	if (rv == FALSE) {
+	rv = varpush(outfile, writev);
+	close(outfile);
+	if (!rv)
 		unlink(buf);
-	} else {
-		strcpy(buf, ctime(tp));
+	else {
+		strlcpy(buf, ctime(tp), sizeof buf);
 		for (sp = buf; *sp != '\n'; sp++)
 			continue;
 		*sp = '\0';
@@ -140,32 +137,27 @@ over:
  * be cleaned up before the game starts.
  */
 bool
-rest_f(char *file)
+rest_f(const char *file)
 {
-
 	char	*sp;
 	int	inf;
 	char	buf[80];
 	STAT	sbuf;
 
-	if ((inf = open(file, O_RDONLY)) < 0) {
-		perror(file);
-		exit(1);
-	}
-	if (fstat(inf, &sbuf) < 0) {		/* get file stats	*/
-		perror(file);
-		exit(1);
-	}
+	if ((inf = open(file, O_RDONLY)) == -1)
+		err(1, "%s", file);
+	if (fstat(inf, &sbuf) == -1)		/* get file stats	*/
+		err(1, "%s", file);
 	varpush(inf, readv);
 	close(inf);
-	strcpy(buf, ctime(&sbuf.st_mtime));
+	strlcpy(buf, ctime(&sbuf.st_mtime), sizeof buf);
 	for (sp = buf; *sp != '\n'; sp++)
 		continue;
 	*sp = '\0';
 	/*
 	 * initialize some necessary values
 	 */
-	sprintf(Initstr, "%s [%s]\n", file, buf);
+	(void)snprintf(Initstr, sizeof Initstr, "%s [%s]\n", file, buf);
 	Fromfile = file;
 	return !On_exit;
 }

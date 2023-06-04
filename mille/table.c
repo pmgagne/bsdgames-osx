@@ -1,11 +1,8 @@
-/*	$NetBSD: ching.h,v 1.1 2005/06/30 13:30:33 perry Exp $	*/
+/*	$NetBSD: table.c,v 1.7 2004/01/27 20:30:30 jsm Exp $	*/
 
 /*
- * Copyright (c) 1988, 1993
+ * Copyright (c) 1982, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Guy Harris.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -34,11 +27,46 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)ching.h	8.1 (Berkeley) 5/31/93
  */
 
-#define OYIN	6		/* yin (broken) moving to yang (solid) */
-#define YYANG	7		/* yang (solid) */
-#define YYIN	8		/* yin (broken) */
-#define OYANG	9		/* yang (solid) moving to yin (broken) */
+#include <sys/cdefs.h>
+#ifndef lint
+__COPYRIGHT("@(#) Copyright (c) 1982, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n");
+#endif /* not lint */
+
+#ifndef lint
+#if 0
+static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 5/31/93";
+#else
+__RCSID("$NetBSD: table.c,v 1.7 2004/01/27 20:30:30 jsm Exp $");
+#endif
+#endif /* not lint */
+
+# define	DEBUG
+
+/*
+ * @(#)table.c	1.1 (Berkeley) 4/1/82
+ */
+
+# include	"mille.h"
+
+int	main(int, char **);
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	int	i, j, count;
+
+	printf("   %16s -> %5s %5s %4s %s\n", "Card", "cards", "count",
+	    "need", "opposite");
+	for (i = 0; i < NUM_CARDS - 1; i++) {
+		for (j = 0, count = 0; j < DECK_SZ; j++)
+			if (Deck[j] == i)
+				count++;
+		printf("%2d %16s -> %5d %5d %4d %s\n", i, C_name[i],
+		    Numcards[i], count, Numneed[i], C_name[opposite(i)]);
+	}
+}

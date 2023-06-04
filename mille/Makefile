@@ -9,6 +9,7 @@ DPADD=	${LIBCURSES}
 LDADD=	-lcurses
 MAN=	mille.6
 HIDEGAME=hidegame
+COPTS+= -Wno-sign-compare -Wno-incompatible-pointer-types-discards-qualifiers
 
 beforeinstall:
 .if !exists(${BINDIR})

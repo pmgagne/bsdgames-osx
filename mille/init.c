@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: init.c,v 1.10 2016/01/08 18:09:59 mestre Exp $	*/
+/*	$NetBSD: init.c,v 1.5 1995/03/24 05:01:40 cgd Exp $	*/
+
+/*
  * Copyright (c) 1982, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,11 +28,10 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)init.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/init.c,v 1.5 1999/12/12 06:17:24 billf Exp $
- * $DragonFly: src/games/mille/init.c,v 1.3 2006/08/27 17:17:23 pavalos Exp $
  */
+
+#include <stdlib.h>
+#include <string.h>
 
 #include "mille.h"
 
@@ -44,7 +46,7 @@ init(void)
 	int	i, j;
 	CARD	card;
 
-	bzero(Numseen, sizeof Numseen);
+	memset(Numseen, 0, sizeof Numseen);
 	Numgos = 0;
 
 	for (i = 0; i < 2; i++) {
@@ -58,7 +60,7 @@ init(void)
 			pp->hand[j] = *--Topcard;
 			if (i == COMP) {
 				account(card = *Topcard);
-				if (issafety(card))
+				if (is_safety(card))
 					pp->safety[card - S_CONV] = S_IN_HAND;
 			}
 		}
@@ -87,12 +89,8 @@ shuffle(void)
 	int	i, r;
 	CARD	temp;
 
-	for (i = 0; i < DECK_SZ; i++) {
-		r = roll(1, DECK_SZ) - 1;
-		if (r < 0 || r > DECK_SZ - 1) {
-			fprintf(stderr, "shuffle: card no. error: %d\n", r);
-			die(1);
-		}
+	for (i = DECK_SZ - 1; i > 0; i--) {
+		r = arc4random_uniform(i + 1);
 		temp = Deck[r];
 		Deck[r] = Deck[i];
 		Deck[i] = temp;

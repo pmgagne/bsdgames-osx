@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: print.c,v 1.9 2016/01/08 18:09:59 mestre Exp $	*/
+/*	$NetBSD: print.c,v 1.4 1995/03/24 05:02:02 cgd Exp $	*/
+
+/*
  * Copyright (c) 1982, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,10 +28,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)print.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/print.c,v 1.5 1999/12/12 06:17:24 billf Exp $
- * $DragonFly: src/games/mille/print.c,v 1.4 2006/08/27 17:17:23 pavalos Exp $
  */
 
 #include "mille.h"
@@ -37,11 +36,8 @@
  * @(#)print.c	1.1 (Berkeley) 4/1/82
  */
 
-#define	COMP_STRT	20
-#define	CARD_STRT	2
-
-static void show_card(int, int, CARD, CARD *);
-static void show_score(int, int, int, int *);
+# define	COMP_STRT	20
+# define	CARD_STRT	2
 
 void
 prboard(void)
@@ -98,7 +94,7 @@ prboard(void)
  * show_card:
  *	Show the given card if it is different from the last one shown
  */
-static void
+void
 show_card(int y, int x, CARD c, CARD *lc)
 {
 	if (c == *lc)
@@ -111,10 +107,10 @@ show_card(int y, int x, CARD c, CARD *lc)
 static char	Score_fmt[] = "%4d";
 
 void
-prscore(bool for_real)
+prscore(bool for_real __unused)
 {
 	PLAY	*pp;
-	int	x = for_real;	/* uses for_real #ifndef EXTRAP */
+	int	x;
 
 	stdscr = Score;
 	for (pp = Player; pp < &Player[2]; pp++) {
@@ -156,7 +152,7 @@ prscore(bool for_real)
  *	Show a score value if it is different from the last time we
  *	showed it.
  */
-static void
+void
 show_score(int y, int x, int s, int *ls)
 {
 	if (s == *ls)

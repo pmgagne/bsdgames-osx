@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: end.c,v 1.8 2016/01/08 18:09:59 mestre Exp $	*/
+/*	$NetBSD: end.c,v 1.4 1995/03/24 05:01:30 cgd Exp $	*/
+
+/*
  * Copyright (c) 1982, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,10 +28,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)end.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/end.c,v 1.5 1999/12/12 06:17:24 billf Exp $
- * $DragonFly: src/games/mille/end.c,v 1.4 2006/08/27 17:17:23 pavalos Exp $
  */
 
 #include "mille.h"
@@ -38,7 +37,7 @@
  */
 
 /*
- *	print out the score as if it was final, and add the totals for
+ *	print out the score as if it were final, and add the totals for
  * the end-of-games points to the user who deserves it (if any).
  */
 void
@@ -78,21 +77,20 @@ finalscore(PLAY *pp)
 	}
 }
 
-#ifdef EXTRAP
+# ifdef EXTRAP
 static int	Last_tot[2];	/* last tot used for extrapolate	*/
 
 /*
- *	print out the score as if it was final, and add the totals for
+ *	print out the score as if it were final, and add the totals for
  * the end-of-games points to the user who deserves it (if any).
  */
 void
 extrapolate(PLAY *pp)
 {
-
 	int		x, num, tot, count;
 
 	num = pp - Player;
-	tot += SC_TRIP + SC_DELAY + SC_EXT;
+	tot += SC_TRIP + SC_DELAY + SC_EXTENSION;
 	x = num * 6 + 21 + 3;
 	for (tot = 5; tot <= 9; tot++)
 		mvaddch(tot, x, '0');
@@ -133,9 +131,8 @@ extrapolate(PLAY *pp)
 void
 undoex(void)
 {
-
-	reg PLAY	*pp;
-	reg int		i;
+	PLAY	*pp;
+	int		i;
 
 	i = 0;
 	for (pp = Player; pp < &Player[2]; pp++) {
@@ -143,4 +140,4 @@ undoex(void)
 		pp->hand_tot -= Last_tot[i++];
 	}
 }
-#endif /* EXTRAP */
+#endif

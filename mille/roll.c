@@ -1,4 +1,7 @@
-/*-
+/*	$OpenBSD: roll.c,v 1.9 2016/01/08 18:09:59 mestre Exp $	*/
+/*	$NetBSD: roll.c,v 1.4 1995/03/24 05:02:07 cgd Exp $	*/
+
+/*
  * Copyright (c) 1982, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -25,11 +28,9 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * @(#)roll.c	8.1 (Berkeley) 5/31/93
- * $FreeBSD: src/games/mille/roll.c,v 1.6 1999/12/12 06:17:24 billf Exp $
- * $DragonFly: src/games/mille/roll.c,v 1.3 2006/08/27 17:17:23 pavalos Exp $
  */
+
+#include <stdlib.h>
 
 #include "mille.h"
 
@@ -43,11 +44,10 @@
 int
 roll(int ndie, int nsides)
 {
-
-	int		tot;
+	int	tot;
 
 	tot = 0;
 	while (ndie--)
-		tot += random() % nsides + 1;
+		tot += arc4random_uniform(nsides) + 1;
 	return tot;
 }
