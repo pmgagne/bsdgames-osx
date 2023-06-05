@@ -32,7 +32,6 @@
  */
 
 #include <sys/types.h>
-//#include <sys/endian.h>
 #include "monop.h"
 #include "deck.h"
 
