@@ -11,6 +11,7 @@ What's new in this fork
 * ming was removed
 * monop was reincluded, using dragonfly version. This version seams different from openbsd
   (which seems to use a preconfigured data file).
+* sail is the openbsd version (fix the display).
 
 This version can be compiled on Apple Silicon or on Intel CPU
 
