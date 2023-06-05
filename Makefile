@@ -23,6 +23,7 @@ SUBDIR= adventure \
 	hunt \
 	larn \
 	mille \
+	monop \
 	number \
 	phantasia \
 	pig \

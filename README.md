@@ -9,6 +9,8 @@ What's new in this fork
   fix the display.
 * Some other conflicts with mac M1 fixed.
 * ming was removed
+* monop was reincluded, using dragonfly version. This version seams different from openbsd
+  (which seems to use a preconfigured data file).
 
 This version can be compiled on Apple Silicon or on Intel CPU
 
@@ -18,11 +20,11 @@ To compile:
 
 To install:
 
-First, create a group called games
+First, create a group called games (in the account control pannel).
 
 Then,
 
-    BINOWN=$USER LIBOWN=$USER MANOWN=$USER SHAREOWN=$USER bsdmake install PREFIX=/usr/local VARDIR=/var/games
+    sudo BINOWN=$USER LIBOWN=$USER MANOWN=$USER SHAREOWN=$USER bsdmake install PREFIX=/usr/local VARDIR=/var/games
 
 
 bsdgames-osx: the classic bsdgames ported to Mac OS X
