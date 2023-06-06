@@ -7,4 +7,5 @@ SRCS=	bog.c help.c mach.c prtable.c timer.c word.c
 MAN=	boggle.6
 GAMESCURSES=
 
+
 .include <bsd.prog.mk>

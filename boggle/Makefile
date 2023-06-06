@@ -7,4 +7,15 @@ SUBDIR=		boggle
 SUBDIR+=	mkdict mkindex dictfiles
 .endif
 
+beforeinstall:
+.if !exists(${BINDIR})
+	mkdir -p ${BINDIR}
+.endif
+.if !exists(${VARDIR})
+	mkdir -p ${VARDIR}
+.endif
+.if !exists(${MANDIR}6)
+	mkdir -p ${MANDIR}6
+.endif
+
 .include <bsd.subdir.mk>

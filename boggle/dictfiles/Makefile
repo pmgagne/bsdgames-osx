@@ -18,4 +18,14 @@ dictionary:
 dictindex: dictionary
 	${.OBJDIR}/../mkindex/mkindex < ${.ALLSRC} > ${.TARGET}
 
+beforeinstall:
+.if !exists(${FILESDIR})
+	mkdir -p ${FILESDIR}
+.endif
+
+
+.if exists(${.CURDIR}/../../Makefile.inc)
+.include "${.CURDIR}/../../Makefile.inc"
+.endif
+
 .include <bsd.prog.mk>
