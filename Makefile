@@ -25,6 +25,7 @@ SUBDIR= adventure \
 	larn \
 	mille \
 	monop \
+	morse \
 	number \
 	phantasia \
 	pig \
