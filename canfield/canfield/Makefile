@@ -8,9 +8,9 @@ VARGAMES=
 GAMESCURSES=
 
 beforeinstall:
-.if !exists(${DESTDIR}/var/games/cfscores)
+.if !exists(${VARDIR}/cfscores)
 	${INSTALL} -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
-	    ${DESTDIR}/var/games/cfscores
+	    ${VARDIR}/cfscores
 .endif
 
 .include "../../Makefile.inc"

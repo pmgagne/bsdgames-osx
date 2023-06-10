@@ -7,12 +7,11 @@ BINDIR?=	${PREFIX}/bin
 SHAREDIR=	${PREFIX}/share
 MANDIR=		${SHAREDIR}/man/man
 FILESDIR?=	${SHAREDIR}/games
-# VARDIR?= 	${PREFIX}/var/games
-VARDIR?= 	/var/games/bsdgames
+VARDIR?= 	${PREFIX}/var/games
 WARNS?=		6
 
-BINGRP?=	staff
-SHAREGRP?= 	staff
+BINGRP?=	games
+SHAREGRP?= 	games
 
 # cribbed from DragonflyBSD build system
 COPTS+=		-std=c11 -Werror-implicit-function-declaration -Wno-nullability-completeness
