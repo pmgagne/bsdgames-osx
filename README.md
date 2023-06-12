@@ -17,7 +17,7 @@ This version can be compiled on Apple Silicon or on Intel CPU
 
 To compile:
 
-    bsdmake PREFIX=/usr/local VARDIR=/var/games
+    bsdmake PREFIX=/usr/local VARDIR=/usr/local/var/games
 
 To install:
 
@@ -25,7 +25,7 @@ First, create a group called games (in the account control pannel).
 
 Then,
 
-    sudo BINOWN=$USER LIBOWN=$USER MANOWN=$USER SHAREOWN=$USER bsdmake install PREFIX=/usr/local VARDIR=/var/games
+    sudo BINOWN=$USER LIBOWN=$USER MANOWN=$USER SHAREOWN=$USER bsdmake install PREFIX=/usr/local VARDIR=/usr/local/var/games
 
 
 bsdgames-osx: the classic bsdgames ported to Mac OS X
