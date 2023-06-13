@@ -43,8 +43,7 @@ beforeinstall:
 
 	${INSTALL} -o ${BINOWN} -g ${BINGRP} -m ${NOBINMODE} /dev/null \
 	    ${VARDIR}/hackdir/perm
-#	chgrp ${BINGRP} ${VARDIR}/hackdir
-#	chmod g+w ${VARDIR}/hackdir
+
 .if !exists(${VARDIR}/hackdir/record)
 	${INSTALL} -o ${BINOWN} -g ${BINGRP} -m 660 /dev/null \
 	    ${VARDIR}/hackdir/record
