@@ -10,8 +10,8 @@ FILESDIR?=	${SHAREDIR}/games
 VARDIR?= 	${PREFIX}/var/games
 WARNS?=		6
 
-BINGRP?=	games
-SHAREGRP?= 	games
+BINGRP?=	staff
+SHAREGRP?= 	staff
 
 # cribbed from DragonflyBSD build system
 COPTS+=		-std=c11 -Werror-implicit-function-declaration -Wno-nullability-completeness
