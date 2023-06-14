@@ -1,3 +1,5 @@
+/*	$NetBSD: pathnames.h,v 1.4 2003/08/07 09:37:19 agc Exp $	*/
+
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -30,6 +32,6 @@
  */
 
 #define	_PATH_MAIL	"/usr/bin/mail"
-#define	_PATH_QUEST	"/usr/local/var/games/questdir"
-#define	_PATH_HACK	"/usr/local/var/games/hackdir"
+#define	_PATH_QUEST	"/var/games/questdir"
+#define	_PATH_HACK	"/var/games/hackdir"
 

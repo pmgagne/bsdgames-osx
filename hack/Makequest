@@ -1,3 +1,5 @@
+#	$NetBSD: Makequest,v 1.2 1995/03/23 08:29:08 cgd Exp $
+#
 # Hack or Quest Makefile.
 
 # on some systems the termcap library is in -ltermcap
@@ -6,7 +8,7 @@ TERMLIB = -ltermlib
 
 # make hack
 GAME = quest
-GAMEDIR = /usr/local/var/games/questdir
+GAMEDIR = /usr/games/lib/questdir
 CFLAGS = -g -DQUEST
 HACKCSRC = hack.Decl.c\
 	hack.apply.c hack.bones.c hack.c hack.cmd.c hack.do.c\
