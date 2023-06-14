@@ -1,78 +1,24 @@
-/*	$NetBSD: hack.pri.c,v 1.13 2010/02/03 15:34:38 roy Exp $	*/
-
-/*
- * Copyright (c) 1985, Stichting Centrum voor Wiskunde en Informatica,
- * Amsterdam
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * - Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the following disclaimer.
- *
- * - Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * - Neither the name of the Stichting Centrum voor Wiskunde en
- * Informatica, nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior
- * written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
- * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/*
- * Copyright (c) 1982 Jay Fenlason <hack@gnu.org>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- * THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+/* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
+/* hack.pri.c - version 1.0.3 */
+/* $FreeBSD: src/games/hack/hack.pri.c,v 1.5 1999/11/16 10:26:37 marcel Exp $ */
+/* $DragonFly: src/games/hack/hack.pri.c,v 1.5 2006/08/21 19:45:32 pavalos Exp $ */
 
 #include "hack.h"
-#include "extern.h"
+#include <curses.h>
+xchar scrlx, scrhx, scrly, scrhy;	/* corners of new area on screen */
 
-static xchar scrlx, scrhx, scrly, scrhy;	/* corners of new area on
-						 * screen */
+extern char *CD;
 
-static void cornbot(int);
+#ifdef NEWSCR
+static void	pobj(struct obj *);
+#endif
+static void	cornbot(int);
 
 void
 swallowed(void)
 {
-	char            ulook[] = "|@|";
+	char ulook[] = { "|@|" };
+
 	ulook[1] = u.usym;
 
 	cls();
@@ -90,37 +36,39 @@ swallowed(void)
 	u.udisy = u.uy;
 }
 
-
 /* VARARGS1 */
-static boolean panicking;
+boolean panicking;
 
 void
-panic(const char *fmt, ...)
+panic(const char *str, ...)
 {
 	va_list ap;
 
-	va_start(ap, fmt);
-	if (panicking++)
-		exit(1);	/* avoid loops - this should never happen */
+	if (panicking)		/* avoid loops - this should never happen*/
+		exit(1);
+	else
+		panicking = true;
+
 	home();
 	puts(" Suddenly, the dungeon collapses.");
 	fputs(" ERROR:  ", stdout);
-	vprintf(fmt, ap);
+	va_start(ap, str);
+	vprintf(str, ap);
 	va_end(ap);
 #ifdef DEBUG
 #ifdef UNIX
 	if (!fork())
 		abort();	/* generate core dump */
-#endif	/* UNIX */
-#endif	/* DEBUG */
+#endif /* UNIX */
+#endif /* DEBUG */
 	more();			/* contains a fflush() */
 	done("panicked");
 }
 
 void
-atl(int x, int y, int ch)
+atl(int x, int y, char ch)
 {
-	struct rm      *crm = &levl[x][y];
+	struct rm *crm = &levl[x][y];
 
 	if (x < 0 || x > COLNO - 1 || y < 0 || y > ROWNO - 1) {
 		impossible("atl(%d,%d,%c)", x, y, ch);
@@ -146,36 +94,39 @@ on_scr(int x, int y)
 		scrhy = y;
 }
 
-/*
- * call: (x,y) - display (-1,0) - close (leave last symbol) (-1,-1)- close
- * (undo last symbol) (-1,let)-open: initialize symbol (-2,let)-change let
+/* call: (x,y) - display
+ *      (-1,0) - close (leave last symbol)
+ *      (-1,-1)- close (undo last symbol)
+ *      (-1,let)-open: initialize symbol
+ *      (-2,let)-change let
  */
 
 void
 tmp_at(schar x, schar y)
 {
-	static schar    prevx, prevy;
-	static char     let;
-	if ((int) x == -2) {	/* change let call */
+	static schar prevx, prevy;
+	static char let;
+
+	if ((int)x == -2) {		/* change let call */
 		let = y;
 		return;
 	}
-	if ((int) x == -1 && (int) y >= 0) {	/* open or close call */
+	if ((int)x == -1 && (int)y >= 0) {	/* open or close call */
 		let = y;
 		prevx = -1;
 		return;
 	}
 	if (prevx >= 0 && cansee(prevx, prevy)) {
-		delay_output();
+		delay_output(50);
 		prl(prevx, prevy);	/* in case there was a monster */
 		at(prevx, prevy, levl[prevx][prevy].scrsym);
 	}
-	if (x >= 0) {		/* normal call */
+	if (x >= 0) {			/* normal call */
 		if (cansee(x, y))
 			at(x, y, let);
 		prevx = x;
 		prevy = y;
-	} else {		/* close call */
+	} else {			/* close call */
 		let = 0;
 		prevx = -1;
 	}
@@ -185,11 +136,12 @@ tmp_at(schar x, schar y)
 void
 Tmp_at(schar x, schar y)
 {
-	static char     let;
-	static xchar    cnt;
-	static coord    tc[COLNO];	/* but watch reflecting beams! */
+	static char let;
+	static xchar cnt;
+	static coord tc[COLNO];	/* but watch reflecting beams! */
 	int xx, yy;
-	if ((int) x == -1) {
+
+	if ((int)x == -1) {
 		if (y > 0) {	/* open call */
 			let = y;
 			cnt = 0;
@@ -205,14 +157,14 @@ Tmp_at(schar x, schar y)
 		cnt = let = 0;	/* superfluous */
 		return;
 	}
-	if ((int) x == -2) {	/* change let call */
+	if ((int)x == -2) {	/* change let call */
 		let = y;
 		return;
 	}
 	/* normal call */
 	if (cansee(x, y)) {
 		if (cnt)
-			delay_output();
+			delay_output(50);
 		at(x, y, let);
 		tc[cnt].x = x;
 		tc[cnt].y = y;
@@ -230,22 +182,22 @@ setclipped(void)
 }
 
 void
-at(xchar x, xchar y, int ch)
+at(xchar x, xchar y, char ch)
 {
 #ifndef lint
-	/* if xchar is unsigned, lint will complain about  if(x < 0)  */
+	/* if xchar is unsigned, lint will complain about if (x < 0)  */
 	if (x < 0 || x > COLNO - 1 || y < 0 || y > ROWNO - 1) {
 		impossible("At gets 0%o at %d %d.", ch, x, y);
 		return;
 	}
-#endif	/* lint */
+#endif /* lint */
 	if (!ch) {
 		impossible("At gets null at %d %d.", x, y);
 		return;
 	}
 	y += 2;
 	curs(x, y);
-	(void) putchar(ch);
+	putchar(ch);
 	curx++;
 }
 
@@ -267,8 +219,8 @@ void
 docrt(void)
 {
 	int x, y;
-	struct rm      *room;
-	struct monst   *mtmp;
+	struct rm *room;
+	struct monst *mtmp;
 
 	if (u.uswallow) {
 		swallowed();
@@ -276,10 +228,7 @@ docrt(void)
 	}
 	cls();
 
-	/*
-	 * Some ridiculous code to get display of @ and monsters (almost)
-	 * right
-	 */
+/* Some ridiculous code to get display of @ and monsters (almost) right */
 	if (!Invisible) {
 		levl[(u.udisx = u.ux)][(u.udisy = u.uy)].scrsym = u.usym;
 		levl[u.udisx][u.udisy].seen = 1;
@@ -291,10 +240,7 @@ docrt(void)
 	for (mtmp = fmon; mtmp; mtmp = mtmp->nmon)
 		mtmp->mdispl = 0;
 	seemons();		/* force new positions to be shown */
-	/*
-	 * This nonsense should disappear soon
-	 * ---------------------------------
-	 */
+/* This nonsense should disappear soon --------------------------------- */
 
 	for (y = 0; y < ROWNO; y++)
 		for (x = 0; x < COLNO; x++)
@@ -314,8 +260,8 @@ void
 docorner(int xmin, int ymax)
 {
 	int x, y;
-	struct rm      *room;
-	struct monst   *mtmp;
+	struct rm *room;
+	struct monst *mtmp;
 
 	if (u.uswallow) {	/* Can be done more efficiently */
 		swallowed();
@@ -361,7 +307,6 @@ void
 pru(void)
 {
 	if (u.udispl && (Invisible || u.udisx != u.ux || u.udisy != u.uy))
-		/* if(! levl[u.udisx][u.udisy].new) */
 		if (!vism_at(u.udisx, u.udisy))
 			newsym(u.udisx, u.udisy);
 	if (Invisible) {
@@ -377,16 +322,16 @@ pru(void)
 }
 
 #ifndef NOWORM
-#include	"def.wseg.h"
-#endif	/* NOWORM */
+extern struct wseg *m_atseg;
+#endif /* NOWORM */
 
 /* print a position that is visible for @ */
 void
 prl(int x, int y)
 {
-	struct rm      *room;
-	struct monst   *mtmp;
-	struct obj     *otmp;
+	struct rm *room;
+	struct monst *mtmp;
+	struct obj *otmp;
 
 	if (x == u.ux && y == u.uy && (!Invisible)) {
 		pru();
@@ -404,7 +349,7 @@ prl(int x, int y)
 		if (m_atseg)
 			pwseg(m_atseg);
 		else
-#endif	/* NOWORM */
+#endif /* NOWORM */
 			pmon(mtmp);
 	} else if ((otmp = o_at(x, y)) && room->typ != POOL)
 		atl(x, y, otmp->olet);
@@ -425,10 +370,10 @@ prl(int x, int y)
 char
 news0(xchar x, xchar y)
 {
-	struct obj     *otmp;
-	struct trap    *ttmp;
-	struct rm      *room;
-	char            tmp;
+	struct obj *otmp;
+	struct trap *ttmp;
+	struct rm *room;
+	char tmp;
 
 	room = &levl[x][y];
 	if (!room->seen)
@@ -449,8 +394,7 @@ news0(xchar x, xchar y)
 		switch (room->typ) {
 		case SCORR:
 		case SDOOR:
-			tmp = room->scrsym;	/* %% wrong after killing
-						 * mimic ! */
+			tmp = room->scrsym;	/* %% wrong after killing mimic ! */
 			break;
 		case HWALL:
 			tmp = '-';
@@ -471,11 +415,6 @@ news0(xchar x, xchar y)
 			else
 				tmp = ' ';
 			break;
-			/*
-				case POOL:
-					tmp = POOL_SYM;
-					break;
-			*/
 		default:
 			tmp = ERRCHAR;
 		}
@@ -493,8 +432,8 @@ newsym(int x, int y)
 void
 mnewsym(int x, int y)
 {
-	struct rm      *room;
-	char            newscrsym;
+	struct rm *room;
+	char newscrsym;
 
 	if (!vism_at(x, y)) {
 		room = &levl[x][y];
@@ -509,7 +448,7 @@ mnewsym(int x, int y)
 void
 nosee(int x, int y)
 {
-	struct rm      *room;
+	struct rm *room;
 
 	if (!isok(x, y))
 		return;
@@ -565,12 +504,12 @@ nose1(int x, int y)
 		nosee(x + 1, y);
 	}
 }
-#endif	/* QUEST */
+#endif /* QUEST */
 
-int
+bool
 vism_at(int x, int y)
 {
-	struct monst   *mtmp;
+	struct monst *mtmp;
 
 	return ((x == u.ux && y == u.uy && !Invisible)
 		? 1 :
@@ -580,11 +519,12 @@ vism_at(int x, int y)
 }
 
 #ifdef NEWSCR
-void
+static void
 pobj(struct obj *obj)
 {
-	int             show = (!obj->oinvis || See_invisible) &&
-	cansee(obj->ox, obj->oy);
+	int show = (!obj->oinvis || See_invisible) &&
+	    cansee(obj->ox, obj->oy);
+
 	if (obj->odispl) {
 		if (obj->odx != obj->ox || obj->ody != obj->oy || !show)
 			if (!vism_at(obj->odx, obj->ody)) {
@@ -599,15 +539,11 @@ pobj(struct obj *obj)
 		obj->ody = obj->oy;
 	}
 }
-#endif	/* NEWSCR */
+#endif /* NEWSCR */
 
 void
 unpobj(struct obj *obj)
 {
-	/*
-	 * if(obj->odispl){ if(!vism_at(obj->odx, obj->ody)) newsym(obj->odx,
-	 * obj->ody); obj->odispl = 0; }
-	 */
 	if (!vism_at(obj->ox, obj->oy))
 		newsym(obj->ox, obj->oy);
 }
@@ -615,7 +551,8 @@ unpobj(struct obj *obj)
 void
 seeobjs(void)
 {
-	struct obj     *obj, *obj2;
+	struct obj *obj, *obj2;
+
 	for (obj = fobj; obj; obj = obj2) {
 		obj2 = obj->nobj;
 		if (obj->olet == FOOD_SYM && obj->otyp >= CORPSE
@@ -633,23 +570,25 @@ seeobjs(void)
 void
 seemons(void)
 {
-	struct monst   *mtmp;
+	struct monst *mtmp;
+
 	for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
 		if (mtmp->data->mlet == ';')
 			mtmp->minvis = (u.ustuck != mtmp &&
-				      levl[mtmp->mx][mtmp->my].typ == POOL);
+			    levl[mtmp->mx][mtmp->my].typ == POOL);
 		pmon(mtmp);
 #ifndef NOWORM
 		if (mtmp->wormno)
 			wormsee(mtmp->wormno);
-#endif	/* NOWORM */
+#endif /* NOWORM */
 	}
 }
 
 void
 pmon(struct monst *mon)
 {
-	int             show = (Blind && Telepat) || canseemon(mon);
+	int show = (Blind && Telepat) || canseemon(mon);
+
 	if (mon->mdispl) {
 		if (mon->mdx != mon->mx || mon->mdy != mon->my || !show)
 			unpmon(mon);
@@ -657,8 +596,8 @@ pmon(struct monst *mon)
 	if (show && !mon->mdispl) {
 		atl(mon->mx, mon->my,
 		    (!mon->mappearance
-		|| u.uprops[PROP(RIN_PROTECTION_FROM_SHAPE_CHANGERS)].p_flgs
-		     ) ? mon->data->mlet : mon->mappearance);
+		    || u.uprops[PROP(RIN_PROTECTION_FROM_SHAPE_CHANGERS)].p_flgs
+		    ) ? mon->data->mlet : mon->mappearance);
 		mon->mdispl = 1;
 		mon->mdx = mon->mx;
 		mon->mdy = mon->my;
@@ -678,7 +617,7 @@ void
 nscr(void)
 {
 	int x, y;
-	struct rm      *room;
+	struct rm *room;
 
 	if (u.uswallow || u.ux == FAR || flags.nscrinh)
 		return;
@@ -695,11 +634,12 @@ nscr(void)
 }
 
 /* 100 suffices for bot(); no relation with COLNO */
-static char oldbot[100], newbot[100];
-void
+char oldbot[100], newbot[100];
+
+static void
 cornbot(int lth)
 {
-	if ((unsigned)lth < sizeof(oldbot)) {
+	if (lth < (int)sizeof(oldbot)) {
 		oldbot[lth] = 0;
 		flags.botl = 1;
 	}
@@ -708,51 +648,38 @@ cornbot(int lth)
 void
 bot(void)
 {
-	char           *ob = oldbot, *nb = newbot;
-	int             i;
-	size_t pos;
+	char *ob = oldbot, *nb = newbot;
+	int i;
 
 	if (flags.botlx)
 		*ob = 0;
 	flags.botl = flags.botlx = 0;
 #ifdef GOLD_ON_BOTL
-	(void) snprintf(newbot, sizeof(newbot),
-		       "Level %-2d  Gold %-5lu  Hp %3d(%d)  Ac %-2d  Str ",
-		       dlevel, u.ugold, u.uhp, u.uhpmax, u.uac);
+	sprintf(newbot,
+		"Level %-2d  Gold %-5lu  Hp %3d(%d)  Ac %-2d  Str ",
+		dlevel, u.ugold, u.uhp, u.uhpmax, u.uac);
 #else
-	(void) snprintf(newbot, sizeof(newbot),
-		       "Level %-2d   Hp %3d(%d)   Ac %-2d   Str ",
-		       dlevel, u.uhp, u.uhpmax, u.uac);
-#endif	/* GOLD_ON_BOTL */
+	sprintf(newbot,
+		"Level %-2d   Hp %3d(%d)   Ac %-2d   Str ",
+		dlevel, u.uhp, u.uhpmax, u.uac);
+#endif /* GOLD_ON_BOTL */
 	if (u.ustr > 18) {
 		if (u.ustr > 117)
-			(void) strlcat(newbot, "18/**", sizeof(newbot));
-		else {
-			pos = strlen(newbot);
-			(void) snprintf(newbot+pos, sizeof(newbot)-pos,
-					"18/%02d", u.ustr - 18);
-		}
-	} else {
-		pos = strlen(newbot);
-		(void) snprintf(newbot+pos, sizeof(newbot)-pos,
-				"%-2d   ", u.ustr);
-	}
-	pos = strlen(newbot);
+			strcat(newbot, "18/**");
+		else
+			sprintf(eos(newbot), "18/%02d", u.ustr - 18);
+	} else
+		sprintf(eos(newbot), "%-2d   ", u.ustr);
 #ifdef EXP_ON_BOTL
-	(void) snprintf(newbot+pos, sizeof(newbot)-pos,
-			"  Exp %2d/%-5lu ", u.ulevel, u.uexp);
+	sprintf(eos(newbot), "  Exp %2d/%-5lu ", u.ulevel, u.uexp);
 #else
-	(void) snprintf(newbot+pos, sizeof(newbot)-pos,
-			"   Exp %2u  ", u.ulevel);
-#endif	/* EXP_ON_BOTL */
-	(void) strlcat(newbot, hu_stat[u.uhs], sizeof(newbot));
-	if (flags.time) {
-		pos = strlen(newbot);
-		(void) snprintf(newbot+pos, sizeof(newbot)-pos,
-				"  %ld", moves);
-	}
+	sprintf(eos(newbot), "   Exp %2u  ", u.ulevel);
+#endif /* EXP_ON_BOTL */
+	strcat(newbot, hu_stat[u.uhs]);
+	if (flags.time)
+		sprintf(eos(newbot), "  %ld", moves);
 	if (strlen(newbot) >= COLNO) {
-		char           *bp0, *bp1;
+		char *bp0, *bp1;
 		bp0 = bp1 = newbot;
 		do {
 			if (*bp0 != ' ' || bp0[1] != ' ' || bp0[2] != ' ')
@@ -762,7 +689,7 @@ bot(void)
 	for (i = 1; i < COLNO; i++) {
 		if (*ob != *nb) {
 			curs(i, ROWNO + 2);
-			(void) putchar(*nb ? *nb : ' ');
+			putchar(*nb ? *nb : ' ');
 			curx++;
 		}
 		if (*ob)
@@ -770,7 +697,7 @@ bot(void)
 		if (*nb)
 			nb++;
 	}
-	(void) strcpy(oldbot, newbot);
+	strcpy(oldbot, newbot);
 }
 
 #ifdef WAN_PROBING
@@ -779,10 +706,10 @@ mstatusline(struct monst *mtmp)
 {
 	pline("Status of %s: ", monnam(mtmp));
 	pline("Level %-2d  Gold %-5lu  Hp %3d(%d)  Ac %-2d  Dam %d",
-	      mtmp->data->mlevel, mtmp->mgold, mtmp->mhp, mtmp->mhpmax,
-	   mtmp->data->ac, (mtmp->data->damn + 1) * (mtmp->data->damd + 1));
+	    mtmp->data->mlevel, mtmp->mgold, mtmp->mhp, mtmp->mhpmax,
+	    mtmp->data->ac, (mtmp->data->damn + 1) * (mtmp->data->damd + 1));
 }
-#endif	/* WAN_PROBING */
+#endif /* WAN_PROBING */
 
 void
 cls(void)
@@ -791,7 +718,7 @@ cls(void)
 		more();
 	flags.toplin = 0;
 
-	clearscreen();
+	clear_screen();
 
 	flags.botlx = 1;
 }
