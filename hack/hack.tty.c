@@ -41,6 +41,8 @@
 #include <termios.h>
 #include "hack.h"
 
+typedef unsigned long u_long;
+
 /*
  * Some systems may have getchar() return EOF for various reasons, and
  * we should not quit before seeing at least NR_OF_EOFS consecutive EOFs.

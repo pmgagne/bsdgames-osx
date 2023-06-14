@@ -1,7 +1,7 @@
 .PATH: ${.CURDIR}/..
 
 PROG=	makedefs
-MK_MAN= no
+NO_MAN= no
 
 build-tools: makedefs.nx
 

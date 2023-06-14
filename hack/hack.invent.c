@@ -501,7 +501,7 @@ ggetobj(const char *word, int (*fn)(struct obj *), int max)
 	int oletct = 0, iletct = 0;
 	boolean allflag = FALSE;
 	char olets[20], ilets[20];
-	bool (*ckfn)(struct obj *) = (bool (*)()) 0;
+	bool (*ckfn)(struct obj *) = NULL;
 	xchar allowgold = (u.ugold && !strcmp(word, "drop")) ? 1 : 0; /* BAH */
 
 	if (!invent && !allowgold) {
