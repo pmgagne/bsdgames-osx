@@ -41,6 +41,9 @@ beforeinstall:
 	${INSTALL} -o ${BINOWN} -g ${BINGRP}  -d hackdir \
 	    ${VARDIR}/hackdir
 
+#	${INSTALL} -o ${BINOWN} -g ${BINGRP}  -d hackdir \
+#	    ${VARDIR}/hackdir/save
+
 	${INSTALL} -o ${BINOWN} -g ${BINGRP} -m ${NOBINMODE} /dev/null \
 	    ${VARDIR}/hackdir/perm
 
