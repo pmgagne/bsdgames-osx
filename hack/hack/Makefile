@@ -22,7 +22,6 @@ GAMESCURSES=
 
 NO_STRICT_ALIASING=
 CFLAGS+= 	-I${.CURDIR}/.. -I.
-OFLAGS += 
 
 FILES=		rumors help hh data
 FILESMODE_rumors=	440
