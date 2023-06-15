@@ -18,6 +18,8 @@
 
 #include <sys/types.h>	/* for time_t and stat */
 #include <sys/stat.h>
+#include <err.h>
+#include <limits.h>
 #include <time.h>
 
 static struct tm *getlt(void);
@@ -49,13 +51,15 @@ getyear(void)
 }
 
 char *
-hack_getdate(void)
+getthedate(void)
 {
 	static char datestr[7];
 	struct tm *lt = getlt();
 
-	snprintf(datestr, sizeof(datestr), "%02d%02d%02d",
-	    lt->tm_year % 100, lt->tm_mon + 1, lt->tm_mday);
+	snprintf(datestr, sizeof(datestr), "%02hu%02hu%02hu",
+	    (unsigned short)(lt->tm_year % 100),
+		(unsigned short)(lt->tm_mon + 1),
+		(unsigned short)lt->tm_mday);
 	return (datestr);
 }
 
@@ -94,13 +98,32 @@ struct stat buf, hbuf;
 void
 gethdate(const char *name)
 {
-/* old version - for people short of space */
-	char *np;
+	const char *p;
+	char *np, *path;
+	char filename[PATH_MAX+1];
 
-	name = "/usr/local/bin/hack";
-	if (stat(name, &hbuf))
-		error("Cannot get status of %s.",
-		      (np = strrchr(name, '/')) ? np + 1 : name);
+	if (strchr(name, '/') != NULL || (p = getenv("PATH")) == NULL)
+		p = "";
+	np = path = strdup(p);	/* Make a copy for strsep. */
+	if (path == NULL)
+		err(1, NULL);
+
+	for (;;) {
+		if ((p = strsep(&np, ":")) == NULL)
+			break;
+		if (*p == '\0')			/* :: */
+			strlcpy(filename, name, sizeof filename);
+		else
+			snprintf(filename, sizeof filename, "%s/%s", p, name);
+
+		if (stat(filename, &hbuf) == 0) {
+			free(path);
+			return;
+		}
+	}
+	error("Cannot get status of %s.",
+		(p = strrchr(name, '/')) ? p+1 : name);
+	free(path);
 }
 
 bool
@@ -162,7 +185,7 @@ getlock(void)
 	fflush(stdout);
 
 	/* we ignore QUIT and INT at this point */
-	if (link(HLOCK, LLOCK) == -1) {
+	if ((link(HLOCK, LLOCK) == -1) && (symlink(HLOCK, LLOCK) == -1)) {
 		int errnosv = errno;
 
 		perror(HLOCK);

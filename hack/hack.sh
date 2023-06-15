@@ -1,5 +1,5 @@
 #!/bin/sh
-HACKDIR=/usr/local/var/games/hackdir
+HACKDIR=/usr/games/lib/hackdir
 HACK=$HACKDIR/hack
 MAXNROFPLAYERS=4
 

@@ -1,7 +1,6 @@
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* hack.eat.c - version 1.0.3 */
 /* $FreeBSD: src/games/hack/hack.eat.c,v 1.4 1999/11/16 10:26:36 marcel Exp $ */
-/* $DragonFly: src/games/hack/hack.eat.c,v 1.5 2006/08/21 19:45:32 pavalos Exp $ */
 
 #include "hack.h"
 char POISONOUS[] = "ADKSVabhks";
@@ -427,11 +426,11 @@ eatcorpse(struct obj *otmp)
 	case 'n':
 		u.uhp = u.uhpmax;
 		flags.botl = 1;
-	/* fall into next case */
+		/* FALLTHROUGH */
 	case '@':
 		pline("You cannibal! You will be sorry for this!");
 	/* not tp++; */
-	/* fall into next case */
+		/* FALLTHROUGH */
 	case 'd':
 		Aggravate_monster |= INTRINSIC;
 		break;
@@ -444,12 +443,12 @@ eatcorpse(struct obj *otmp)
 			Invis |= INTRINSIC;
 			See_invisible |= INTRINSIC;
 		}
-	/* fall into next case */
+		/* FALLTHROUGH */
 	case 'y':
 #ifdef QUEST
 		u.uhorizon++;
 #endif /* QUEST */
-	/* fall into next case */
+		/* FALLTHROUGH */
 	case 'B':
 		Confusion = 50;
 		break;
@@ -471,7 +470,8 @@ eatcorpse(struct obj *otmp)
 		pline("You turn to stone.");
 		killer = "dead cockatrice";
 		done("died");
-	/* NOTREACHED */
+		/* NOTREACHED */
+		exit(1);	/* hint for a compiler */
 	case 'a':
 		if (Stoned) {
 			pline("What a pity - you just destroyed a future piece of art!");

@@ -3,7 +3,7 @@
 /* $FreeBSD: src/games/hack/hack.end.c,v 1.4 1999/11/16 10:26:36 marcel Exp $ */
 
 #include "hack.h"
-#define	Sprintf	(void) sprintf
+#define	Sprintf	sprintf
 
 #define	newttentry()	alloc(sizeof(struct toptenentry))
 #define	NAMSZ	8
@@ -286,7 +286,7 @@ topten(void)
 	(t0->name)[NAMSZ] = 0;
 	strncpy(t0->death, killer, DTHSZ);
 	(t0->death)[DTHSZ] = 0;
-	strcpy(t0->date, hack_getdate());
+	strcpy(t0->date, getthedate());
 
 	/* assure minimum number of points */
 	if (t0->points < POINTSMIN)
@@ -484,7 +484,7 @@ outentry(int rank, struct toptenentry *t1, int so)
 		char hpbuf[10];
 		int hppos;
 
-		Sprintf(hpbuf, "%s", (t1->hp > 0) ? itoa(t1->hp) : "-");
+		snprintf(hpbuf, sizeof hpbuf, "%s", (t1->hp > 0) ? itoa(t1->hp) : "-");
 		hppos = COLNO - 7 - strlen(hpbuf);
 		if (bp <= linebuf + hppos) {
 			while (bp < linebuf + hppos)
@@ -513,10 +513,10 @@ outentry(int rank, struct toptenentry *t1, int so)
 static char *
 itoa(int a)
 {
-	static char buf[12];
+	static char buf[10];
 
-	Sprintf(buf, "%d", a);
-	return (buf);
+	snprintf(buf, sizeof buf, "%d", a);
+	return(buf);
 }
 
 static const char *

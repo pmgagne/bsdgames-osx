@@ -45,7 +45,7 @@ NXCFLAGS?=	${CFLAGS:N-mtune*:N-mcpu*:N-march*}
 
 # These games write to /var/games.bsdgames
 .if defined(VARGAMES)
-BINGRP=		games
+# BINGRP=		games
 BINMODE=	2555
 .endif
 

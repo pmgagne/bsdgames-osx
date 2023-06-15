@@ -3,9 +3,9 @@
 /* $FreeBSD: src/games/hack/hack.objnam.c,v 1.3 1999/11/16 02:57:08 billf Exp $ */
 
 #include "hack.h"
-#define	Sprintf	(void) sprintf
-#define	Strcat	(void) strcat
-#define	Strcpy	(void) strcpy
+#define	Sprintf	sprintf
+#define	Strcat	strcat
+#define	Strcpy	strcpy
 #define	PREFIX	15
 extern int bases[];
 
@@ -120,7 +120,7 @@ xname(struct obj *obj)
 			break;
 		}
 	/* fungis ? */
-	/* fall into next case */
+		/* FALLTHROUGH */
 	case WEAPON_SYM:
 		if (obj->otyp == WORM_TOOTH && pl) {
 			pl = 0;
@@ -132,7 +132,7 @@ xname(struct obj *obj)
 			Strcpy(buf, "crysknives");
 			break;
 		}
-	/* fall into next case */
+		/* FALLTHROUGH */
 	case ARMOR_SYM:
 	case CHAIN_SYM:
 	case ROCK_SYM:
@@ -269,7 +269,7 @@ doname(struct obj *obj)
 	case ARMOR_SYM:
 		if (obj->owornmask & W_ARMOR)
 			Strcat(bp, " (being worn)");
-	/* fall into next case */
+		/* FALLTHROUGH */
 	case WEAPON_SYM:
 		if (obj->known) {
 			Strcat(prefix, sitoa(obj->spe));

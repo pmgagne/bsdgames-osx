@@ -1,6 +1,5 @@
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* hack.h - version 1.0.3 */
-/* $DragonFly: src/games/hack/hack.h,v 1.4 2006/08/21 19:45:32 pavalos Exp $ */
 
 #include "config.h"
 #include <fcntl.h>
@@ -272,7 +271,7 @@ void	 done_in_by(struct monst *);
 void	 done(const char *);
 void	 clearlocks(void);
 #ifdef NOSAVEONHANGUP
-void	 hangup(int);
+void	 hangup(int) __dead2;
 #endif
 char	*eos(char *);
 void	 charcat(char *, char);
@@ -461,7 +460,7 @@ void	atl(int, int, char);
 void	on_scr(int, int);
 void	tmp_at(schar, schar);
 void	Tmp_at(schar, schar);
-void	setclipped(void);
+void	setclipped(void) __dead2;
 void	at(xchar, xchar, char);
 void	prme(void);
 int	doredraw(void);
@@ -505,7 +504,7 @@ void	outrumor(void);
 /* hack.save.c */
 int		 dosave(void);
 #ifndef NOSAVEONHANGUP
-void		 hangup(int);
+void		 hangup(int) __dead2;
 #endif
 bool		 dorecover(int);
 struct obj	*restobjchn(int);
@@ -589,7 +588,7 @@ void	more(void);
 void	cmore(const char *);
 void	clrlin(void);
 void	pline(const char *, ...) __printflike(1, 2);
-void	vpline(const char *, va_list) __printflike(1, 0);
+void	vpline(const char *, va_list) __printf0like(1, 0);
 void	putsym(char);
 void	putstr(const char *);
 
@@ -616,14 +615,14 @@ void		 drown(void);
 void	 gettty(void);
 void	 settty(const char *);
 void	 setftty(void);
-void	 error(const char *, ...) __printflike(1, 2);
+void	 error(const char *, ...) __printflike(1, 2) __dead2;
 void	 getlin(char *);
 void	 getret(void);
 void	 cgetret(const char *);
 void	 xwaitforspace(const char *);
 char	*parse(void);
 char	 readchar(void);
-void	 end_of_input(void);
+void	 end_of_input(void) __dead2;
 
 /* hack.u_init.c */
 void	u_init(void);
@@ -632,7 +631,7 @@ void	plnamesuffix(void);
 /* hack.unix.c */
 void	 setrandom(void);
 int	 getyear(void);
-char	*hack_getdate(void);
+char	*getthedate(void);
 int	 phase_of_the_moon(void);
 bool	 night(void);
 bool	 midnight(void);

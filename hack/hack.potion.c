@@ -1,7 +1,6 @@
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* hack.potion.c - version 1.0.3 */
 /* $FreeBSD: src/games/hack/hack.potion.c,v 1.5 1999/11/16 10:26:37 marcel Exp $ */
-/* $DragonFly: src/games/hack/hack.potion.c,v 1.4 2006/08/21 19:45:32 pavalos Exp $ */
 
 #include "hack.h"
 extern struct monst youmonst;

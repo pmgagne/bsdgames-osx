@@ -41,6 +41,8 @@
 #include <termios.h>
 #include "hack.h"
 
+typedef unsigned long u_long;
+
 /*
  * Some systems may have getchar() return EOF for various reasons, and
  * we should not quit before seeing at least NR_OF_EOFS consecutive EOFs.
@@ -103,8 +105,8 @@ setctty(void)
 void
 setftty(void)
 {
-	unsigned long ef = 0;		/* desired value of flags & ECHO */
-	unsigned long cf = !(ICANON);	/* desired value of flags & CBREAK */
+	u_long ef = 0;		/* desired value of flags & ECHO */
+	u_long cf = !(ICANON);	/* desired value of flags & CBREAK */
 	int change = 0;
 
 	flags.cbreak = ON;
