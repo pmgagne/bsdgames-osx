@@ -9,23 +9,23 @@ What's new in this fork
   fix the display.
 * Some other conflicts with mac M1 fixed.
 * ming was removed
-* monop was reincluded, using dragonfly version. This version seams different from openbsd
+* monop was reincluded, using dragonfly version. This version seems different from openbsd
   (which seems to use a preconfigured data file).
 * sail is the openbsd version (fix the display).
+* use hack from freebsd.
 
-This version can be compiled on Apple Silicon or on Intel CPU
+This version can be compiled on Apple Silicon or on Intel CPU.
 
 To compile:
 
-    bsdmake PREFIX=/usr/local VARDIR=/usr/local/var/games
+    bsdmake
 
 To install:
 
-First, create a group called games (in the account control pannel).
-
-Then,
-
-    sudo BINOWN=$USER LIBOWN=$USER MANOWN=$USER SHAREOWN=$USER bsdmake install PREFIX=/usr/local VARDIR=/usr/local/var/games
+    sudo BINOWN=$USER LIBOWN=$USER MANOWN=$USER SHAREOWN=$USER bsdmake install
+    
+This version will place binaries in /usr/local/bin, datafiles in /usr/local/share/games and 
+save files in /usr/local/var/games. Those paths are hardcoded in the source files for now.
 
 
 bsdgames-osx: the classic bsdgames ported to Mac OS X
